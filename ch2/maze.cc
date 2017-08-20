@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <ctime>
+#include <deque>
 #include <iostream>
 #include <set>
 #include <vector>
@@ -133,6 +134,25 @@ Path dfs(const Maze& m, const Location& start, const Location& goal) {
     return {};
 }
 
+Path bfs(const Maze& m, const Location& start, const Location& goal) {
+    std::set<Node> explored{{start, nullptr}};
+    std::deque<Node> frontier;
+    for (const auto& l : successors_for_maze(m, start)) frontier.push_back({l, nullptr});
+    while (!frontier.empty()) {
+        auto current_node = frontier.front();
+        if (current_node.l == goal) {
+            return build_path(current_node.prev);
+        }
+        frontier.pop_front();
+        auto [it, _] = explored.insert(current_node);
+        for (const auto& s : successors_for_maze(m, current_node.l)) {
+            Node n{s, &*it};
+            if (explored.find(n) == explored.end()) frontier.push_back(n);
+        }
+    }
+    return {};
+}
+
 Maze draw_path(Maze m, Path p) {
     for (const auto& l : p) {
         m[l.row][l.col] = Cell::Path;
@@ -147,6 +167,6 @@ int main() {
     auto m = generate_maze(10, 10, 0.2);
     set_start_location(m, start_location);
     set_goal_location(m, goal_location);
-    auto p = dfs(m, start_location, goal_location);
+    auto p = bfs(m, start_location, goal_location);
     print_maze(draw_path(m, p));
 }
