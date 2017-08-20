@@ -5,7 +5,7 @@
 #include <iostream>
 #include <set>
 #include <vector>
-#include <tuple>
+#include "range/v3/all.hpp"
 
 enum class Cell: char {
     Empty = ' ',
@@ -78,16 +78,16 @@ void print_maze(const Maze& m) {
 using Successors = std::vector<Location>;
 
 Successors successors_for_maze(const Maze& m, const Location& l) {
-    Successors s {
-        {l.row, l.col - 1},
-        {l.row, l.col + 1},
+    using namespace ranges::view;
+    Successors candidates {
         {l.row - 1, l.col},
+        {l.row, l.col + 1},
         {l.row + 1, l.col},
+        {l.row, l.col - 1},
     };
-    s.erase(std::remove_if(s.begin(), s.end(), [&m](const Location& next) {
-                return !is_within_maze(m, next) || is_cell_blocked(m, next);
-                }), s.end());
-    return s;
+    return candidates | remove_if([&m](const Location& c) {
+            return !is_within_maze(m, c) || is_cell_blocked(m, c);
+            });
 }
 
 struct Node {
