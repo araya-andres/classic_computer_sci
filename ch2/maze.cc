@@ -1,12 +1,13 @@
 #include "prettyprint.hpp"
+#include "range/v3/all.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <ctime>
 #include <deque>
 #include <iostream>
 #include <set>
+#include <stack>
 #include <vector>
-#include "range/v3/all.hpp"
 
 enum class Cell: char {
     Empty = ' ',
@@ -117,18 +118,18 @@ Path build_path(const Node* n) {
 
 Path dfs(const Maze& m, const Location& start, const Location& goal) {
     std::set<Node> explored{{start, nullptr}};
-    std::vector<Node> frontier;
-    for (const auto& l : successors_for_maze(m, start)) frontier.push_back({l, nullptr});
+    std::stack<Node> frontier;
+    for (const auto& l : successors_for_maze(m, start)) frontier.push({l, nullptr});
     while (!frontier.empty()) {
-        auto current_node = frontier.back();
+        auto current_node = frontier.top();
         if (current_node.l == goal) {
             return build_path(current_node.prev);
         }
-        frontier.pop_back();
+        frontier.pop();
         auto [it, _] = explored.insert(current_node);
         for (const auto& s : successors_for_maze(m, current_node.l)) {
             Node n{s, &*it};
-            if (explored.find(n) == explored.end()) frontier.push_back(n);
+            if (explored.find(n) == explored.end()) frontier.push(n);
         }
     }
     return {};
@@ -167,6 +168,6 @@ int main() {
     auto m = generate_maze(10, 10, 0.2);
     set_start_location(m, start_location);
     set_goal_location(m, goal_location);
-    auto p = bfs(m, start_location, goal_location);
+    auto p = dfs(m, start_location, goal_location);
     print_maze(draw_path(m, p));
 }
