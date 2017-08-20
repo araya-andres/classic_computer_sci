@@ -122,10 +122,10 @@ Path build_path(const Node* n) {
 }
 
 Path dfs(const Maze& m, const Location& start, const Location& goal) {
-    std::set<Node> explored{{start, nullptr}};
     std::stack<Node> frontier;
-    for (const auto& l : successors_for_maze(m, start)) frontier.push({l, nullptr});
-    while (!frontier.empty()) {
+    std::set<Node> explored;
+    frontier.push({start, nullptr});
+    do {
         auto current_node = frontier.top();
         if (current_node.l == goal) {
             return build_path(current_node.prev);
@@ -136,15 +136,14 @@ Path dfs(const Maze& m, const Location& start, const Location& goal) {
             Node n{s, &*it};
             if (explored.find(n) == explored.end()) frontier.push(n);
         }
-    }
+    } while (!frontier.empty());
     return {};
 }
 
 Path bfs(const Maze& m, const Location& start, const Location& goal) {
-    std::set<Node> explored{{start, nullptr}};
-    std::deque<Node> frontier;
-    for (const auto& l : successors_for_maze(m, start)) frontier.push_back({l, nullptr});
-    while (!frontier.empty()) {
+    std::deque<Node> frontier{{start, nullptr}};
+    std::set<Node> explored;
+    do {
         auto current_node = frontier.front();
         if (current_node.l == goal) {
             return build_path(current_node.prev);
@@ -155,7 +154,7 @@ Path bfs(const Maze& m, const Location& start, const Location& goal) {
             Node n{s, &*it};
             if (explored.find(n) == explored.end()) frontier.push_back(n);
         }
-    }
+    } while (!frontier.empty());
     return {};
 }
 
@@ -190,8 +189,8 @@ Maze draw_path(Maze m, Path p) {
 }
 
 int main() {
-    srand(time(nullptr));
-    const Location start_location{4,4};
+    srand(1234);
+    const Location start_location{5,5};
     const Location goal_location{0,0};
     auto m = generate_maze(5, 5, 0);
     set_start_location(m, start_location);
