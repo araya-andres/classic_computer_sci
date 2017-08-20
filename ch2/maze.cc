@@ -5,6 +5,8 @@
 #include <ctime>
 #include <deque>
 #include <iostream>
+#include <map>
+#include <queue>
 #include <set>
 #include <stack>
 #include <vector>
@@ -49,10 +51,10 @@ bool is_cell_blocked(const Maze& m, const Location& l) {
 
 Maze generate_maze(int rows, int cols, double sparseness) {
     Maze m(rows);
-    for (auto& r : m) {
-        r.assign(cols, Cell::Empty);
-        for (auto& c : r) {
-            if (1.0 * rand() / RAND_MAX < sparseness) c = Cell::Blocked;
+    for (auto& row : m) {
+        row.assign(cols, Cell::Empty);
+        for (auto& cell : row) {
+            if (1.0 * rand() / RAND_MAX < sparseness) cell = Cell::Blocked;
         }
     }
     return m;
@@ -69,10 +71,8 @@ void set_goal_location(Maze& m, const Location& g) {
 }
 
 void print_maze(const Maze& m) {
-    for (const auto& r : m) {
-        for (const auto& c : r) {
-            std::cout << c;
-        }
+    for (const auto& row : m) {
+        for (const auto& cell : row) std::cout << cell;
         std::cout << '\n';
     }
 }
@@ -95,6 +95,7 @@ Successors successors_for_maze(const Maze& m, const Location& l) {
 struct Node {
     Location l;
     const Node * prev;
+    int cost;
 };
 
 bool operator<(const Node& lhs, const Node& rhs) {
@@ -103,6 +104,10 @@ bool operator<(const Node& lhs, const Node& rhs) {
 
 bool operator==(const Node& lhs, const Node& rhs) {
     return lhs.l == rhs.l;
+}
+
+std::ostream& operator<<(std::ostream& os, const Node& n) {
+    return os << '{' << n.l << ',' << n.prev << ',' << n.cost << '}';
 }
 
 using Path = std::vector<Location>;
@@ -154,6 +159,29 @@ Path bfs(const Maze& m, const Location& start, const Location& goal) {
     return {};
 }
 
+Path a_star(const Maze& m, const Location& start, const Location& goal) {
+    auto cmp = [](const Node& lhs, const Node& rhs) { return lhs.cost < rhs.cost; };
+    std::map<Node, int> explored{{{start, nullptr}, 0}};
+    std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier{cmp};
+    for (const auto& l : successors_for_maze(m, start)) frontier.push({l, nullptr, 1});
+    while (!frontier.empty()) {
+        auto current_node = frontier.top();
+        if (current_node.l == goal) {
+            return build_path(current_node.prev);
+        }
+        frontier.pop();
+        auto [parent, success] = explored.insert({current_node, current_node.cost});
+        if (!success) explored[current_node] = current_node.cost;
+        auto new_cost = current_node.cost + 1;
+        for (const auto& s : successors_for_maze(m, current_node.l)) {
+            Node n{s, &(parent->first), new_cost};
+            auto it = explored.find(n);
+            if (it == explored.end() || new_cost < it->second) frontier.push(n);
+        }
+    }
+    return {};
+}
+
 Maze draw_path(Maze m, Path p) {
     for (const auto& l : p) {
         m[l.row][l.col] = Cell::Path;
@@ -163,11 +191,11 @@ Maze draw_path(Maze m, Path p) {
 
 int main() {
     srand(time(nullptr));
-    const Location start_location{5,5};
+    const Location start_location{4,4};
     const Location goal_location{0,0};
-    auto m = generate_maze(10, 10, 0.2);
+    auto m = generate_maze(5, 5, 0);
     set_start_location(m, start_location);
     set_goal_location(m, goal_location);
-    auto p = dfs(m, start_location, goal_location);
+    auto p = a_star(m, start_location, goal_location);
     print_maze(draw_path(m, p));
 }
