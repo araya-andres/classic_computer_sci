@@ -10,6 +10,7 @@
 #include <set>
 #include <stack>
 #include <tuple>
+#include <unistd.h>
 #include <vector>
 
 enum class Cell: char {
@@ -150,12 +151,12 @@ Path bfs(const Maze& m, const Location& start, const Location& goal) {
         if (current_node.l == goal) {
             return build_path(current_node.prev);
         }
-        frontier.pop_front();
         std::tie(it, std::ignore) = explored.insert(current_node);
         for (const auto& s : successors_for_maze(m, current_node.l)) {
             Node n{s, &*it};
             if (explored.find(n) == explored.end()) frontier.push_back(n);
         }
+        frontier.pop_front();
     } while (!frontier.empty());
     return {};
 }
@@ -171,7 +172,6 @@ Path a_star(const Maze& m, const Location& start, const Location& goal) {
         if (current_node.l == goal) {
             return build_path(current_node.prev);
         }
-        frontier.pop();
         const auto cost = current_node.cost;
         std::tie(it, success) = explored.insert({current_node, cost});
         if (!success) { // node was already explored, update cost
@@ -184,6 +184,7 @@ Path a_star(const Maze& m, const Location& start, const Location& goal) {
             it = explored.find(n);
             if (it == explored.end() || new_cost < it->second) frontier.push(n);
         }
+        frontier.pop();
     } while (!frontier.empty());
     return {};
 }
@@ -195,13 +196,25 @@ Maze draw_path(Maze m, Path p) {
     return m;
 }
 
-int main() {
-    srand(time(nullptr));
+using MazeSolver = Path(*)(const Maze&, const Location&, const Location&);
+
+int main(int argc, char* argv[]) {
+    MazeSolver solver = a_star;
+    unsigned seed = time(nullptr);
+    int c;
+    while ((c = getopt(argc, argv, "abd")) != -1) {
+        switch (c) {
+            case 'a': solver = a_star; break;
+            case 'b': solver = bfs; break;
+            case 'd': solver = dfs; break;
+        }
+    }
+    srand(seed);
     const Location start_location{5, 5};
     const Location goal_location{0, 0};
     auto m = generate_maze(10, 10, 0.2);
     set_start_location(m, start_location);
     set_goal_location(m, goal_location);
-    auto p = a_star(m, start_location, goal_location);
+    auto p = solver(m, start_location, goal_location);
     print_maze(draw_path(m, p));
 }
