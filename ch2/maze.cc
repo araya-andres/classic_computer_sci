@@ -202,19 +202,21 @@ int main(int argc, char* argv[]) {
     MazeSolver solver = a_star;
     unsigned seed = time(nullptr);
     int c;
-    while ((c = getopt(argc, argv, "abd")) != -1) {
+    while ((c = getopt(argc, argv, "abds:")) != -1) {
         switch (c) {
             case 'a': solver = a_star; break;
             case 'b': solver = bfs; break;
             case 'd': solver = dfs; break;
+            case 's': seed = atoi(optarg); break;
         }
     }
+    std::cout << "seed = " << seed << '\n';
     srand(seed);
     const Location start_location{5, 5};
     const Location goal_location{0, 0};
-    auto m = generate_maze(10, 10, 0.2);
-    set_start_location(m, start_location);
-    set_goal_location(m, goal_location);
-    auto p = solver(m, start_location, goal_location);
-    print_maze(draw_path(m, p));
+    auto maze = generate_maze(10, 10, 0.2);
+    set_start_location(maze, start_location);
+    set_goal_location(maze, goal_location);
+    auto path = solver(maze, start_location, goal_location);
+    print_maze(draw_path(maze, path));
 }
