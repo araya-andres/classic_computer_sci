@@ -9,6 +9,7 @@
 #include <queue>
 #include <set>
 #include <stack>
+#include <tuple>
 #include <vector>
 
 enum class Cell: char {
@@ -40,8 +41,8 @@ std::ostream& operator<<(std::ostream& os, const Location& l) {
 }
 
 bool is_within_maze(const Maze& m, const Location& l) {
-    return (0 <= l.row && l.row < m.size())
-        && (0 <= l.col && l.col < m[l.row].size());
+    return (0 <= l.row && static_cast<size_t>(l.row) < m.size())
+        && (0 <= l.col && static_cast<size_t>(l.col) < m[l.row].size());
 }
 
 bool is_cell_blocked(const Maze& m, const Location& l) {
@@ -122,16 +123,16 @@ Path build_path(const Node* n) {
 }
 
 Path dfs(const Maze& m, const Location& start, const Location& goal) {
-    std::stack<Node> frontier;
+    std::stack<Node> frontier{std::deque<Node>{{start}}};
     std::set<Node> explored;
-    frontier.push({start});
+    auto it = explored.end();
     do {
         const auto current_node = frontier.top();
         if (current_node.l == goal) {
             return build_path(current_node.prev);
         }
         frontier.pop();
-        const auto [it, _] = explored.insert(current_node);
+        std::tie(it, std::ignore) = explored.insert(current_node);
         for (const auto& s : successors_for_maze(m, current_node.l)) {
             Node n{s, &*it};
             if (explored.find(n) == explored.end()) frontier.push(n);
@@ -143,13 +144,14 @@ Path dfs(const Maze& m, const Location& start, const Location& goal) {
 Path bfs(const Maze& m, const Location& start, const Location& goal) {
     std::deque<Node> frontier{{start}};
     std::set<Node> explored;
+    auto it = explored.end();
     do {
         const auto current_node = frontier.front();
         if (current_node.l == goal) {
             return build_path(current_node.prev);
         }
         frontier.pop_front();
-        const auto [it, _] = explored.insert(current_node);
+        std::tie(it, std::ignore) = explored.insert(current_node);
         for (const auto& s : successors_for_maze(m, current_node.l)) {
             Node n{s, &*it};
             if (explored.find(n) == explored.end()) frontier.push_back(n);
@@ -160,9 +162,10 @@ Path bfs(const Maze& m, const Location& start, const Location& goal) {
 
 Path a_star(const Maze& m, const Location& start, const Location& goal) {
     auto cmp = [](const Node& lhs, const Node& rhs) { return lhs.cost > rhs.cost; };
-    std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier{cmp};
+    std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier{cmp, {{start}}};
     std::map<Node, int> explored;
-    frontier.push({start});
+    auto it = explored.end();
+    bool success;
     do {
         const auto current_node = frontier.top();
         if (current_node.l == goal) {
@@ -170,7 +173,7 @@ Path a_star(const Maze& m, const Location& start, const Location& goal) {
         }
         frontier.pop();
         const auto cost = current_node.cost;
-        auto [it, success] = explored.insert({current_node, cost});
+        std::tie(it, success) = explored.insert({current_node, cost});
         if (!success) { // node was already explored, update cost
             explored[current_node] = cost;
         }
@@ -196,7 +199,7 @@ void sandbox(const Maze& m, const Location& start, const Location& goal) {
 }
 
 int main() {
-    srand(1234);
+    srand(time(nullptr));
     const Location start_location{5, 5};
     const Location goal_location{0, 0};
     auto m = generate_maze(10, 10, 0.2);
