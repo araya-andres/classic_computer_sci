@@ -195,9 +195,6 @@ Maze draw_path(Maze m, Path p) {
     return m;
 }
 
-void sandbox(const Maze& m, const Location& start, const Location& goal) {
-}
-
 int main() {
     srand(time(nullptr));
     const Location start_location{5, 5};
