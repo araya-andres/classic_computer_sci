@@ -95,21 +95,21 @@ Successors successors_for_maze(const Maze& m, const Location& l) {
 }
 
 struct Node {
-    Location l;
-    const Node * prev;
+    Location location;
+    const Node * parent;
     int cost;
 };
 
 bool operator<(const Node& lhs, const Node& rhs) {
-    return lhs.l < rhs.l;
+    return lhs.location < rhs.location;
 }
 
 bool operator==(const Node& lhs, const Node& rhs) {
-    return lhs.l == rhs.l;
+    return lhs.location == rhs.location;
 }
 
 std::ostream& operator<<(std::ostream& os, const Node& n) {
-    return os << '{' << n.l << ',' << n.prev << ',' << n.cost << '}';
+    return os << '{' << n.location << ',' << n.parent << ',' << n.cost << '}';
 }
 
 using Path = std::vector<Location>;
@@ -117,8 +117,8 @@ using Path = std::vector<Location>;
 Path build_path(const Node* n) {
     Path p;
     while (n) {
-        p.push_back(n->l);
-        n = n->prev;
+        p.push_back(n->location);
+        n = n->parent;
     }
     return p;
 }
@@ -129,12 +129,13 @@ Path dfs(const Maze& m, const Location& start, const Location& goal) {
     auto it = explored.end();
     do {
         const auto current_node = frontier.top();
-        if (current_node.l == goal) {
-            return build_path(current_node.prev);
+        const auto current_location = current_node.location;
+        if (current_location == goal) {
+            return build_path(current_node.parent);
         }
         frontier.pop();
         std::tie(it, std::ignore) = explored.insert(current_node);
-        for (const auto& s : successors_for_maze(m, current_node.l)) {
+        for (const auto& s : successors_for_maze(m, current_location)) {
             Node n{s, &*it};
             if (explored.find(n) == explored.end()) frontier.push(n);
         }
@@ -148,11 +149,12 @@ Path bfs(const Maze& m, const Location& start, const Location& goal) {
     auto it = explored.end();
     do {
         const auto current_node = frontier.front();
-        if (current_node.l == goal) {
-            return build_path(current_node.prev);
+        const auto current_location = current_node.location;
+        if (current_location == goal) {
+            return build_path(current_node.parent);
         }
         std::tie(it, std::ignore) = explored.insert(current_node);
-        for (const auto& s : successors_for_maze(m, current_node.l)) {
+        for (const auto& s : successors_for_maze(m, current_location)) {
             Node n{s, &*it};
             if (explored.find(n) == explored.end()) frontier.push_back(n);
         }
@@ -169,18 +171,19 @@ Path a_star(const Maze& m, const Location& start, const Location& goal) {
     bool success;
     do {
         const auto current_node = frontier.top();
-        if (current_node.l == goal) {
-            return build_path(current_node.prev);
+        const auto current_location = current_node.location;
+        if (current_location == goal) {
+            return build_path(current_node.parent);
         }
         const auto cost = current_node.cost;
         std::tie(it, success) = explored.insert({current_node, cost});
         if (!success) { // node was already explored, update cost
             explored[current_node] = cost;
         }
-        const auto prev = &it->first;
+        const auto parent = &it->first;
         const auto new_cost = cost + 1;
-        for (const auto& s : successors_for_maze(m, current_node.l)) {
-            Node n{s, prev, new_cost};
+        for (const auto& s : successors_for_maze(m, current_location)) {
+            Node n{s, parent, new_cost};
             it = explored.find(n);
             if (it == explored.end() || new_cost < it->second) frontier.push(n);
         }
