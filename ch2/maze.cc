@@ -29,6 +29,10 @@ using Maze = std::vector<std::vector<Cell>>;
 
 struct Location { int row, col; };
 
+Location pick_random_location(const Maze& m) {
+    return { int(rand() % m.size()), int(rand() % m[0].size()) };
+}
+
 bool operator==(const Location& lhs, const Location& rhs) {
     return lhs.row == rhs.row && lhs.col == rhs.col;
 }
@@ -62,21 +66,22 @@ Maze generate_maze(int rows, int cols, double sparseness) {
     return m;
 }
 
-void set_start_location(Maze& m, const Location& s) {
+void mark_start_location(Maze& m, const Location& s) {
     assert(is_within_maze(m, s));
     m[s.row][s.col] = Cell::Start;
 }
 
-void set_goal_location(Maze& m, const Location& g) {
+void mark_goal_location(Maze& m, const Location& g) {
     assert(is_within_maze(m, g));
     m[g.row][g.col] = Cell::Goal;
 }
 
-void print_maze(const Maze& m) {
+std::ostream& operator<<(std::ostream& os, const Maze& m) {
     for (const auto& row : m) {
-        for (const auto& cell : row) std::cout << cell;
-        std::cout << '\n';
+        for (const auto& cell : row) os << cell;
+        os << '\n';
     }
+    return os;
 }
 
 using Successors = std::vector<Location>;
@@ -115,6 +120,7 @@ std::ostream& operator<<(std::ostream& os, const Node& n) {
 using Path = std::vector<Location>;
 
 Path build_path(const Node* n) {
+    assert(n);
     Path p;
     while (n) {
         p.push_back(n->location);
@@ -131,7 +137,7 @@ Path dfs(const Maze& m, const Location& start, const Location& goal) {
         const auto current_node = frontier.top();
         const auto current_location = current_node.location;
         if (current_location == goal) {
-            return build_path(current_node.parent);
+            return build_path(&current_node);
         }
         frontier.pop();
         std::tie(it, std::ignore) = explored.insert(current_node);
@@ -151,7 +157,7 @@ Path bfs(const Maze& m, const Location& start, const Location& goal) {
         const auto current_node = frontier.front();
         const auto current_location = current_node.location;
         if (current_location == goal) {
-            return build_path(current_node.parent);
+            return build_path(&current_node);
         }
         std::tie(it, std::ignore) = explored.insert(current_node);
         for (const auto& s : successors_for_maze(m, current_location)) {
@@ -173,7 +179,7 @@ Path a_star(const Maze& m, const Location& start, const Location& goal) {
         const auto current_node = frontier.top();
         const auto current_location = current_node.location;
         if (current_location == goal) {
-            return build_path(current_node.parent);
+            return build_path(&current_node);
         }
         const auto cost = current_node.cost;
         std::tie(it, success) = explored.insert({current_node, cost});
@@ -192,11 +198,10 @@ Path a_star(const Maze& m, const Location& start, const Location& goal) {
     return {};
 }
 
-Maze draw_path(Maze m, Path p) {
+void mark_path(Maze& m, Path p) {
     for (const auto& l : p) {
         m[l.row][l.col] = Cell::Path;
     }
-    return m;
 }
 
 using MazeSolver = Path(*)(const Maze&, const Location&, const Location&);
@@ -216,13 +221,15 @@ int main(int argc, char* argv[]) {
             case 'S': seed = atoi(optarg); break;
         }
     }
-    std::cout << "seed = " << seed << '\n';
     srand(seed);
     auto maze = generate_maze(size, size, sparseness);
-    const Location start_location{0, 0};
-    const Location goal_location{size - 1, size - 1};
-    set_start_location(maze, start_location);
-    set_goal_location(maze, goal_location);
+    auto start_location = pick_random_location(maze);
+    auto goal_location = pick_random_location(maze);
     auto path = solver(maze, start_location, goal_location);
-    print_maze(draw_path(maze, path));
+    mark_path(maze, path);
+    mark_start_location(maze, start_location);
+    mark_goal_location(maze, goal_location);
+    std::cout
+        << "seed = " << seed << '\n'
+        << maze << '\n';
 }
