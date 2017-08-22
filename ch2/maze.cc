@@ -204,20 +204,23 @@ using MazeSolver = Path(*)(const Maze&, const Location&, const Location&);
 int main(int argc, char* argv[]) {
     MazeSolver solver = a_star;
     unsigned seed = time(nullptr);
+    int size = 10;
+    double sparseness = 0.2;
     int c;
-    while ((c = getopt(argc, argv, "abds:")) != -1) {
+    while ((c = getopt(argc, argv, "abds:S:")) != -1) {
         switch (c) {
             case 'a': solver = a_star; break;
             case 'b': solver = bfs; break;
             case 'd': solver = dfs; break;
-            case 's': seed = atoi(optarg); break;
+            case 's': size = atoi(optarg); break;
+            case 'S': seed = atoi(optarg); break;
         }
     }
     std::cout << "seed = " << seed << '\n';
     srand(seed);
-    const Location start_location{5, 5};
-    const Location goal_location{0, 0};
-    auto maze = generate_maze(10, 10, 0.2);
+    auto maze = generate_maze(size, size, sparseness);
+    const Location start_location{0, 0};
+    const Location goal_location{size - 1, size - 1};
     set_start_location(maze, start_location);
     set_goal_location(maze, goal_location);
     auto path = solver(maze, start_location, goal_location);
