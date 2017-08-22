@@ -29,8 +29,8 @@ using Maze = std::vector<std::vector<Cell>>;
 
 struct Location { int row, col; };
 
-bool operator==(const Location& rhs, const Location& lhs) {
-    return rhs.row == lhs.row && rhs.col == lhs.col;
+bool operator==(const Location& lhs, const Location& rhs) {
+    return lhs.row == rhs.row && lhs.col == rhs.col;
 }
 
 bool operator<(const Location& lhs, const Location& rhs) {
