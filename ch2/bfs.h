@@ -9,55 +9,64 @@
 #include <tuple>
 #include <vector>
 
-template <typename S>
+template <typename State>
 struct Node {
-    S state;
+    State state;
     const Node* parent;
 };
 
-template <typename S>
-bool operator<(const Node<S>& lhs, const Node<S>& rhs) {
+template <typename State>
+bool operator<(const Node<State>& lhs, const Node<State>& rhs) {
     return lhs.state < rhs.state;
 }
 
-template <typename S>
-bool operator==(const Node<S>& lhs, const Node<S>& rhs) {
+template <typename State>
+bool operator==(const Node<State>& lhs, const Node<State>& rhs) {
     return lhs.state == rhs.state;
 }
 
-template <typename S>
-std::ostream& operator<<(std::ostream& os, const Node<S>& n) {
+template <typename State>
+std::ostream& operator<<(std::ostream& os, const Node<State>& n) {
     return os << '{' << n.state << ',' << n.parent << '}';
 }
 
-template <typename S>
-std::vector<S> build_path(const Node<S>* n) {
+template <typename State>
+using Path = std::vector<State>;
+
+template <typename State>
+Path<State> build_path(const Node<State>* n) {
     assert(n);
-    std::vector<S> p;
+    Path<State> tmp;
     while (n) {
-        p.push_back(n->state);
+        tmp.push_back(n->state);
         n = n->parent;
     }
-    return {p.rbegin(), p.rend()};
+    return {tmp.rbegin(), tmp.rend()};
 }
 
-template <typename S>
-std::vector<S> bfs(
-        const S& initial_state,
-        std::function<bool(const S&)> goal_test,
-        std::function<std::vector<S>(const S&)> successors)
+template <typename State>
+using GoalTestFn = std::function<bool(const State&)>;
+
+template <typename State>
+using SuccessorsFn = std::function<std::vector<State>(const State&)>;
+
+template <typename State>
+Path<State> bfs(
+        const State& initial_state,
+        GoalTestFn<State> goal_test,
+        SuccessorsFn<State> successors)
 {
-    std::deque<Node<S>> frontier{{initial_state}};
-    std::set<Node<S>> explored;
+    std::deque<Node<State>> frontier{{initial_state}};
+    std::set<Node<State>> explored;
     do {
-        const auto current_node = frontier.front();
-        const auto current_state = current_node.state;
+        const auto& current_node = frontier.front();
+        const auto& current_state = current_node.state;
         if (goal_test(current_state)) {
             return build_path(&current_node);
         }
         const auto [it, _] = explored.insert(current_node);
         for (const auto& s : successors(current_state)) {
-            Node<S> n{s, &*it};
+            Node<State> n{s, &*it};
             if (explored.find(n) == explored.end()) frontier.push_back(n);
         }
         frontier.pop_front();
