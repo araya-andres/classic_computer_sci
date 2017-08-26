@@ -8,7 +8,7 @@ const unsigned MAX_NUM = 3;
 enum class Side { EAST, WEST };
 
 std::ostream& operator<<(std::ostream& os, Side s) {
-    return os << (s == Side::EAST ? "east" : "west");
+    return os << (s == Side::WEST ? "west" : "east");
 }
 
 struct MCState {
@@ -48,6 +48,12 @@ bool operator==(const MCState& lhs, const MCState& rhs) {
 }
 
 bool operator<(const MCState& lhs, const MCState& rhs) {
+    if (lhs.side() == Side::WEST && rhs.side() == Side::EAST) {
+        return true;
+    }
+    if (lhs.side() == Side::EAST && rhs.side() == Side::WEST) {
+        return false;
+    }
     return lhs.west_bank_missionaries() < rhs.west_bank_missionaries()
         || (lhs.west_bank_missionaries() == rhs.west_bank_missionaries() && lhs.west_bank_cannibals() < rhs.west_bank_cannibals());
 }
@@ -58,11 +64,11 @@ std::ostream& operator<<(std::ostream& os, const MCState& s) {
         << " missionaries and " << s.west_bank_cannibals() << " cannibals.\n"
         << "On the east bank there are " << s.east_bank_missionaries()
         << " missionaries and " << s.east_bank_cannibals() << " cannibals.\n"
-        << "The boat is on the " << s.side() << " bank\n";
+        << "The boat is on the " << s.side() << " bank";
 }
 
 bool goal_test(const MCState& s) {
-    return s == MCState{0, 0, Side::WEST};
+    return s.west_bank_missionaries() == 0 && s.west_bank_cannibals() == 0;
 }
 
 std::vector<MCState> successorsMC(const MCState& s) {
@@ -89,9 +95,10 @@ void print_solution(const Path& p) {
         std::cout << "no solution found\n";
         return;
     }
-    auto old_state = p.cbegin();
+    auto old_state = p.crbegin();
     auto current_state = old_state + 1;
-    while (current_state != p.cend()) {
+    std::cout << *old_state << '\n';
+    while (current_state != p.crend()) {
         int missionaries = old_state->missionaries(), cannibals = old_state->cannibals();
         if (current_state->side() == Side::WEST) {
             missionaries -= current_state->east_bank_missionaries();
@@ -102,8 +109,10 @@ void print_solution(const Path& p) {
         }
         std::cout
             << missionaries << " missionaries and " << cannibals << " cannivals"
-            << " moved from the " << old_state->side() << " bank "
-            << " to the " << current_state->side() << " bank.\n";
+            << " moved from the " << old_state->side() << " bank"
+            << " to the " << current_state->side() << " bank.\n"
+            << *current_state << '\n'
+            << "***\n";
         ++old_state, ++current_state;
     }
 }
