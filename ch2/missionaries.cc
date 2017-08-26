@@ -1,3 +1,4 @@
+#include "bfs.h"
 #include "range/v3/all.hpp"
 #include <iostream>
 #include <vector>
@@ -46,6 +47,11 @@ bool operator==(const MCState& lhs, const MCState& rhs) {
         && lhs.side_ == rhs.side_;
 }
 
+bool operator<(const MCState& lhs, const MCState& rhs) {
+    return lhs.west_bank_missionaries() < rhs.west_bank_missionaries()
+        || (lhs.west_bank_missionaries() == rhs.west_bank_missionaries() && lhs.west_bank_cannibals() < rhs.west_bank_cannibals());
+}
+
 std::ostream& operator<<(std::ostream& os, const MCState& s) {
     return os
         << "On the west bank there are " << s.west_bank_missionaries()
@@ -79,6 +85,10 @@ std::vector<MCState> successorsMC(const MCState& s) {
 using Path = std::vector<MCState>;
 
 void print_solution(const Path& p) {
+    if (p.empty()) {
+        std::cout << "no solution found\n";
+        return;
+    }
     auto old_state = p.cbegin();
     auto current_state = old_state + 1;
     while (current_state != p.cend()) {
@@ -99,4 +109,5 @@ void print_solution(const Path& p) {
 }
 
 int main() {
+    print_solution(bfs<MCState>(MCState{3, 3, Side::WEST}, goal_test, successorsMC));
 }
