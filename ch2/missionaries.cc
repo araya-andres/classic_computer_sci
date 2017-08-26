@@ -108,11 +108,11 @@ void print_solution(const Path& p) {
             cannibals -= current_state->west_bank_cannibals();
         }
         std::cout
+            << "***\n"
             << missionaries << " missionaries and " << cannibals << " cannivals"
             << " moved from the " << old_state->side() << " bank"
             << " to the " << current_state->side() << " bank.\n"
-            << *current_state << '\n'
-            << "***\n";
+            << *current_state << '\n';
         ++old_state, ++current_state;
     }
 }
