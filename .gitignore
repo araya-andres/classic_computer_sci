@@ -1,4 +1,5 @@
 tags
+*.dSYM
 ch1/fib2
 ch1/fib3
 ch1/gene
@@ -6,3 +7,4 @@ ch1/pi
 ch2/maze
 ch2/maze2
 ch2/missionaries
+ch3/map-coloring
