@@ -95,10 +95,10 @@ void print_solution(const Path& p) {
         std::cout << "no solution found\n";
         return;
     }
-    auto old_state = p.crbegin();
+    auto old_state = p.begin();
     auto current_state = old_state + 1;
     std::cout << *old_state << '\n';
-    while (current_state != p.crend()) {
+    while (current_state != p.end()) {
         int missionaries = old_state->missionaries(), cannibals = old_state->cannibals();
         if (current_state->side() == Side::WEST) {
             missionaries -= current_state->east_bank_missionaries();

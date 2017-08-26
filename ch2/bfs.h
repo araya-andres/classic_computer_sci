@@ -38,7 +38,7 @@ std::vector<S> build_path(const Node<S>* n) {
         p.push_back(n->state);
         n = n->parent;
     }
-    return p;
+    return {p.rbegin(), p.rend()};
 }
 
 template <typename S>
