@@ -27,5 +27,5 @@ int main() {
         {NSW,VIC},
     };
     CSP<Constraint, const char *, const char*> csp{constraints, domains, variables};
-    std::cout << backtracking_search<Constraint, const char *, const char*>(csp, {}) << '\n';
+    std::cout << backtracking_search<Constraint, const char *, const char*>(csp) << '\n';
 }

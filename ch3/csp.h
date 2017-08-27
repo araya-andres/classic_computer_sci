@@ -66,4 +66,9 @@ Assigment<V, D> backtracking_search(CSP<C, D, V>& csp, const Assigment<V, D>& as
     return {};
 }
 
+template <typename C, typename D, typename V>
+Assigment<V, D> backtracking_search(CSP<C, D, V>& csp) {
+    return backtracking_search(csp, {});
+}
+
 #endif
