@@ -39,7 +39,7 @@ bool is_consistent(const V& variable, const Assigment<V, D>& assigment, const CS
     std::copy_if(
             csp.constraints.cbegin(), csp.constraints.cend(),
             std::back_inserter(variable_constraints),
-            [&variable](const C& c) { return c.variable1 == variable || c.variable2 == variable; }
+            [&variable](const C& c){ return c.variable1 == variable || c.variable2 == variable; }
             );
     for (const auto& c : variable_constraints) {
         if (!c.is_satisfied(assigment)) return false;
@@ -60,7 +60,8 @@ Assigment<V, D> backtracking_search(CSP<C, D, V>& csp, const Assigment<V, D>& as
         auto local_assigment = assigment;
         local_assigment[variable] = value;
         if (is_consistent<C, D, V>(variable, local_assigment, csp)) {
-            return backtracking_search(csp, local_assigment);
+            auto ans = backtracking_search(csp, local_assigment);
+            if (!ans.empty()) return ans;
         }
     }
     return {};
