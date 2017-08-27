@@ -35,13 +35,8 @@ struct BinaryConstraint {
 
 template <typename C, typename D, typename V>
 bool is_consistent(const V& variable, const Assigment<V, D>& assigment, const CSP<C, D, V>& csp) {
-    Constraints<C> variable_constraints;
-    std::copy_if(
-            csp.constraints.cbegin(), csp.constraints.cend(),
-            std::back_inserter(variable_constraints),
-            [&variable](const C& c){ return c.variable1 == variable || c.variable2 == variable; }
-            );
-    for (const auto& c : variable_constraints) {
+    for (const auto& c : csp.constraints) {
+        if (c.variable1 != variable && c.variable2 != variable) continue;
         if (!c.is_satisfied(assigment)) return false;
     }
     return true;
@@ -51,7 +46,7 @@ template <typename C, typename D, typename V>
 Assigment<V, D> backtracking_search(CSP<C, D, V>& csp, const Assigment<V, D>& assigment) {
     const auto& variables = csp.variables;
     if (assigment.size() == variables.size()) return assigment;
-    auto it = std::find_if(variables.cbegin(), variables.cend(),
+    const auto it = std::find_if(variables.cbegin(), variables.cend(),
             [&assigment](const V& v) { return assigment.find(v) == assigment.end(); });
     assert(it != variables.cend());
     const auto& variable = *it;
@@ -60,7 +55,7 @@ Assigment<V, D> backtracking_search(CSP<C, D, V>& csp, const Assigment<V, D>& as
         auto local_assigment = assigment;
         local_assigment[variable] = value;
         if (is_consistent<C, D, V>(variable, local_assigment, csp)) {
-            auto ans = backtracking_search(csp, local_assigment);
+            const auto ans = backtracking_search(csp, local_assigment);
             if (!ans.empty()) return ans;
         }
     }

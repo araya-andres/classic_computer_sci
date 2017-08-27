@@ -1,5 +1,5 @@
 CXXFLAGS=-std=c++1z -Wall -pedantic -g -I ../cxx-prettyprint/ -I ../range-v3/include/
-BINS=map-coloring
+BINS=map-coloring 8-queens
 
 all: $(BINS)
 
