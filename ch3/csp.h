@@ -25,10 +25,13 @@ template <typename V, typename D>
 struct BinaryConstraint {
     V variable1;
     V variable2;
+    bool contains(const V& variable) const {
+        return variable1 == variable || variable2 == variable;
+    }
     bool is_satisfied(const Assigment<V, D>& a) const {
-        auto it1 = a.find(variable1);
-        auto it2 = a.find(variable2);
-        auto end = a.cend();
+        const auto it1 = a.find(variable1);
+        const auto it2 = a.find(variable2);
+        const auto end = a.cend();
         return (it1 == end || it2 == end) || it1->second != it2->second;
     }
 };
@@ -36,7 +39,7 @@ struct BinaryConstraint {
 template <typename C, typename D, typename V>
 bool is_consistent(const V& variable, const Assigment<V, D>& assigment, const CSP<C, D, V>& csp) {
     for (const auto& c : csp.constraints) {
-        if (c.variable1 != variable && c.variable2 != variable) continue;
+        if (!c.contains(variable)) continue;
         if (!c.is_satisfied(assigment)) return false;
     }
     return true;
