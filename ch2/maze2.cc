@@ -1,12 +1,13 @@
+#include "bfs.h"
 #include "prettyprint.hpp"
 #include "range/v3/all.hpp"
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <unistd.h>
 #include <vector>
-#include "bfs.h"
 
 enum class Cell: char {
     Empty = ' ',
@@ -53,10 +54,11 @@ bool is_cell_blocked(const Maze& m, const Location& l) {
 Maze generate_maze(int rows, int cols, double sparseness) {
     Maze m(rows);
     for (auto& row : m) {
-        row.assign(cols, Cell::Empty);
-        for (auto& cell : row) {
-            if (1.0 * rand() / RAND_MAX < sparseness) cell = Cell::Blocked;
-        }
+        std::generate_n(std::back_inserter(row), cols, [&sparseness](){
+                return (1.0 * rand() / RAND_MAX < sparseness)
+                    ? Cell::Blocked
+                    : Cell::Empty;
+                });
     }
     return m;
 }

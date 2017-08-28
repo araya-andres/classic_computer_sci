@@ -88,9 +88,7 @@ std::vector<MCState> successorsMC(const MCState& s) {
     return successors | remove_if([](const MCState& s) { return !s.is_legal(); });
 }
 
-using Path = std::vector<MCState>;
-
-void print_solution(const Path& p) {
+void print_solution(const Path<MCState>& p) {
     if (p.empty()) {
         std::cout << "no solution found\n";
         return;
