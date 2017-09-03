@@ -20,7 +20,7 @@ struct QueenConstraint {
 };
 
 int main() {
-    std::vector<int> values{1,2,3,4,5,6,7,8};
+    Variables<int> values{1,2,3,4,5,6,7,8};
     Domains<int, int> domains;
     Constraints<QueenConstraint> constraints;
     for (auto v : values) {

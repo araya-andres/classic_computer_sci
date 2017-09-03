@@ -48,8 +48,8 @@ struct SendMoreMoneyConstraint {
 
 int main() {
     std::vector<std::string> words{"send", "more", "money"};
-    std::vector<SendMoreMoneyConstraint> constraints;
-    std::map<char, std::vector<int>> domains;
+    Constraints<SendMoreMoneyConstraint> constraints;
+    Domains<char, int> domains;
     auto variables = unique(flatten(words));
     for (auto ch: variables) {
         constraints.push_back({ch, variables.size(), words});
