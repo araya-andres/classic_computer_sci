@@ -11,13 +11,6 @@ template <typename C> using Constraints = std::vector<C>;
 template <typename V, typename D> using Domains = std::map<V, std::vector<D>>;
 template <typename V> using Variables = std::vector<V>;
 
-template <typename C, typename D, typename V>
-struct CSP {
-    Constraints<C> constraints;
-    Domains<V, D> domains;
-    Variables<V> variables;
-};
-
 template <typename V, typename D>
 using Assigment = std::map<V, D>;
 
@@ -37,8 +30,8 @@ struct BinaryConstraint {
 };
 
 template <typename C, typename D, typename V>
-bool is_consistent(const V& variable, const Assigment<V, D>& assigment, const CSP<C, D, V>& csp) {
-    for (const auto& c : csp.constraints) {
+bool is_consistent(const V& variable, const Assigment<V, D>& assigment, const Constraints<C>& constraints) {
+    for (const auto& c : constraints) {
         if (!c.contains(variable)) continue;
         if (!c.is_satisfied(assigment)) return false;
     }
@@ -46,19 +39,21 @@ bool is_consistent(const V& variable, const Assigment<V, D>& assigment, const CS
 }
 
 template <typename C, typename D, typename V>
-Assigment<V, D> backtracking_search(CSP<C, D, V>& csp, const Assigment<V, D>& assigment) {
-    const auto& variables = csp.variables;
+Assigment<V, D> backtracking_search(
+        const Constraints<C>& constraints,
+        const Domains<V, D>& domains,
+        const Variables<V>& variables,
+        const Assigment<V, D>& assigment) {
     if (assigment.size() == variables.size()) return assigment;
     const auto it = std::find_if(variables.cbegin(), variables.cend(),
             [&assigment](const V& v) { return assigment.find(v) == assigment.end(); });
     assert(it != variables.cend());
     const auto& variable = *it;
-    const auto& domain = csp.domains[variable];
-    for (const auto& value : domain) {
+    for (const auto& value : domains.at(variable)) {
         auto local_assigment = assigment;
         local_assigment[variable] = value;
-        if (is_consistent<C, D, V>(variable, local_assigment, csp)) {
-            const auto ans = backtracking_search(csp, local_assigment);
+        if (is_consistent<C, D, V>(variable, local_assigment, constraints)) {
+            const auto ans = backtracking_search(constraints, domains, variables, local_assigment);
             if (!ans.empty()) return ans;
         }
     }
@@ -67,11 +62,10 @@ Assigment<V, D> backtracking_search(CSP<C, D, V>& csp, const Assigment<V, D>& as
 
 template <typename C, typename D, typename V>
 Assigment<V, D> backtracking_search(
-        std::vector<C>& constraints,
-        std::map<V, std::vector<D>>& domains,
-        std::vector<V>& variables) {
-    CSP<C, D, V> csp{constraints, domains, variables};
-    return backtracking_search(csp, {});
+        const Constraints<C>& constraints,
+        const Domains<V, D>& domains,
+        const Variables<V>& variables) {
+    return backtracking_search(constraints, domains, variables, {});
 }
 
 #endif
