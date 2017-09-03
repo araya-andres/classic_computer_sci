@@ -38,6 +38,14 @@ bool is_consistent(const V& variable, const Assigment<V, D>& assigment, const Co
     return true;
 }
 
+template <typename V, typename D>
+const V& next_variable(const Variables<V>& variables, const Assigment<V, D>& assigment) {
+    const auto it = std::find_if(variables.cbegin(), variables.cend(),
+            [&assigment](const V& v) { return assigment.find(v) == assigment.end(); });
+    assert(it != variables.cend());
+    return *it;
+}
+
 template <typename C, typename D, typename V>
 Assigment<V, D> backtracking_search(
         const Constraints<C>& constraints,
@@ -45,10 +53,7 @@ Assigment<V, D> backtracking_search(
         const Variables<V>& variables,
         const Assigment<V, D>& assigment) {
     if (assigment.size() == variables.size()) return assigment;
-    const auto it = std::find_if(variables.cbegin(), variables.cend(),
-            [&assigment](const V& v) { return assigment.find(v) == assigment.end(); });
-    assert(it != variables.cend());
-    const auto& variable = *it;
+    const auto& variable = next_variable(variables, assigment);
     for (const auto& value : domains.at(variable)) {
         auto local_assigment = assigment;
         local_assigment[variable] = value;
