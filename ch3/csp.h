@@ -66,11 +66,6 @@ Assigment<V, D> backtracking_search(CSP<C, D, V>& csp, const Assigment<V, D>& as
 }
 
 template <typename C, typename D, typename V>
-Assigment<V, D> backtracking_search(CSP<C, D, V>& csp) {
-    return backtracking_search(csp, {});
-}
-
-template <typename C, typename D, typename V>
 Assigment<V, D> backtracking_search(
         std::vector<C>& constraints,
         std::map<V, std::vector<D>>& domains,

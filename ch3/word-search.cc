@@ -119,8 +119,7 @@ int main() {
         locations[w] = generate_domain(w, grid);
         constraints.emplace_back(w);
     }
-    CSP<WordSearchConstraint, Locations, std::string> csp{constraints, locations, words};
-    for (const auto& [w, l] : backtracking_search(csp)) {
+    for (const auto& [w, l] : backtracking_search(constraints, locations, words)) {
         assert(w.size() == l.size());
         std::cout << w << ':' << l << '\n';
         for (size_t i = 0, n = w.size(); i < n; ++i) {

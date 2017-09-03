@@ -27,6 +27,5 @@ int main() {
         domains[v] = values;
         constraints.push_back({v});
     }
-    CSP<QueenConstraint, int, int> csp{constraints, domains, values};
-    std::cout << backtracking_search<QueenConstraint, int, int>(csp) << '\n';
+    std::cout << backtracking_search(constraints, domains, values) << '\n';
 }
