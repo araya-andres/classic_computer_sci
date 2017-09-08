@@ -8,11 +8,31 @@
 #include <utility>
 #include <vector>
 
-using Edge = std::pair<int, int>;
-Edge reverse(const Edge& e) { return {e.second, e.first}; }
+struct Edge { int u, v; };
+Edge reverse(const Edge& e) { return {e.v, e.u}; }
 
 std::ostream& operator<<(std::ostream& os, const Edge& e) {
-    return os << "(" << e.first << " <-> " << e.second << ")";
+    return os << "(" << e.u << " <-> " << e.v << ")";
+}
+
+bool operator==(const Edge& lhs, const Edge& rhs) {
+    return lhs.u == rhs.u && lhs.v == rhs.u;
+}
+
+bool operator<(const Edge& lhs, const Edge& rhs) {
+    return (lhs.u < rhs.u)
+        || (lhs.u == rhs.u && lhs.v < rhs.v);
+}
+
+template <typename Weight>
+struct WeightedEdge {
+    int u, v;
+    Weight weight;
+};
+
+template <typename Weight>
+bool operator==(const WeightedEdge<Weight>& lhs, const WeightedEdge<Weight>& rhs) {
+    return lhs.u == rhs.u && lhs.v == rhs.u && lhs.weight == rhs.weight;
 }
 
 template <typename Vertex>
@@ -63,7 +83,7 @@ struct Graph {
                 return path_dict_to_path(start_index, current_index, path_dict);
             }
             for (const auto& e: edges_for(current_index)) {
-                const auto to = e.second;
+                const auto to = e.v;
                 if (explored.find(to) == explored.end()) {
                     explored.insert(to);
                     frontier.push_back(to);
@@ -78,9 +98,9 @@ struct Graph {
 private:
 
     void add_edge(const Edge& e) {
-        auto first = edges_.cbegin();
+        auto u = edges_.cbegin();
         auto last = edges_.cend();
-        auto it = find(first, last, e);
+        auto it = find(u, last, e);
         if (it == last) {
             edges_.push_back(e);
             edges_.push_back(reverse(e));
@@ -92,19 +112,19 @@ private:
     }
 
     int index_of(const Vertex& v) const {
-        auto first = vertices_.cbegin();
+        auto u = vertices_.cbegin();
         auto last = vertices_.cend();
-        auto it = std::find(first, last, v);
+        auto it = std::find(u, last, v);
         return it == last
             ? -1
-            : std::distance(first, it);
+            : std::distance(u, it);
     }
 
     auto neighbors_for(int index) const {
         std::vector<Vertex> neighbors;
         for (const auto& e: edges_) {
-            if (e.first == index) {
-                neighbors.push_back(vertices_[e.second]);
+            if (e.u == index) {
+                neighbors.push_back(vertices_[e.v]);
             }
         }
         return neighbors;
@@ -113,16 +133,17 @@ private:
     auto edges_for(int index) const {
         std::vector<Edge> edges;
         for (const auto& e : edges_) {
-            if (e.first == index) edges.push_back(e);
+            if (e.u == index) edges.push_back(e);
         }
         return edges;
     }
 
     Path<Vertex> path_dict_to_path(const int start_index, const int current_index, const std::map<int, Edge>& dict) {
-        std::vector<Vertex> tmp;
-        for (auto from = dict.at(current_index).first; from != start_index; from = dict.at(from).first) {
+        std::vector<Vertex> tmp{vertex_at(current_index)};
+        for (auto from = dict.at(current_index).u; from != start_index; from = dict.at(from).u) {
             tmp.push_back(vertex_at(from));
         }
+        tmp.push_back(vertex_at(start_index));
         return {tmp.crbegin(), tmp.crend()};
     }
 
