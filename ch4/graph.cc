@@ -8,18 +8,18 @@
 #include <utility>
 #include <vector>
 
-struct Edge { int u, v; };
-Edge reverse(const Edge& e) { return {e.v, e.u}; }
+struct UnweightedEdge { int u, v; };
+UnweightedEdge reverse(const UnweightedEdge& e) { return {e.v, e.u}; }
 
-std::ostream& operator<<(std::ostream& os, const Edge& e) {
+std::ostream& operator<<(std::ostream& os, const UnweightedEdge& e) {
     return os << "(" << e.u << " <-> " << e.v << ")";
 }
 
-bool operator==(const Edge& lhs, const Edge& rhs) {
+bool operator==(const UnweightedEdge& lhs, const UnweightedEdge& rhs) {
     return lhs.u == rhs.u && lhs.v == rhs.u;
 }
 
-bool operator<(const Edge& lhs, const Edge& rhs) {
+bool operator<(const UnweightedEdge& lhs, const UnweightedEdge& rhs) {
     return (lhs.u < rhs.u)
         || (lhs.u == rhs.u && lhs.v < rhs.v);
 }
@@ -35,10 +35,15 @@ bool operator==(const WeightedEdge<Weight>& lhs, const WeightedEdge<Weight>& rhs
     return lhs.u == rhs.u && lhs.v == rhs.u && lhs.weight == rhs.weight;
 }
 
+template <typename Weight>
+bool operator<(const WeightedEdge<Weight>& lhs, const WeightedEdge<Weight>& rhs) {
+    return lhs.u == rhs.u && lhs.v == rhs.u && lhs.weight < rhs.weight;
+}
+
 template <typename Vertex>
 using Path = std::vector<Vertex>;
 
-template <typename Vertex>
+template <typename Vertex, typename Edge = UnweightedEdge>
 struct Graph {
     Graph(const std::vector<Vertex>& vertices) : vertices_(vertices) {}
 
