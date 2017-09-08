@@ -1,6 +1,10 @@
 #include "prettyprint.hpp"
 #include <algorithm>
+#include <deque>
+#include <functional>
 #include <iostream>
+#include <map>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -11,7 +15,8 @@ std::ostream& operator<<(std::ostream& os, const Edge& e) {
     return os << "(" << e.first << " <-> " << e.second << ")";
 }
 
-using UnweightedEdge = Edge;
+template <typename Vertex>
+using Path = std::vector<Vertex>;
 
 template <typename Vertex>
 struct Graph {
@@ -22,10 +27,6 @@ struct Graph {
         return vertices_.size() - 1;
     }
 
-    void add_edge(const std::pair<Vertex, Vertex>& e) {
-        add_edge(e.first, e.second);
-    }
-
     void add_edge(const Vertex& from, const Vertex& to) {
         auto i = index_of(from);
         auto j = index_of(to);
@@ -33,9 +34,7 @@ struct Graph {
     }
 
     void add_edges(const std::vector<std::pair<Vertex, Vertex>>& edges) {
-        for (const auto& e: edges) {
-            add_edge(e);
-        }
+        for (const auto& e: edges) add_edge(e.first, e.second);
     }
 
     size_t vertex_count() const { return vertices_.size(); }
@@ -51,6 +50,30 @@ struct Graph {
     }
 
     const std::vector<Vertex>& vertices() const { return vertices_; }
+
+    Path<Vertex> bfs(const Vertex& v0, const std::function<bool(const Vertex&)>& goal_test) {
+        const auto start_index = index_of(v0);
+        if (start_index == -1) return {};
+        std::deque<int> frontier{start_index};
+        std::set<int> explored;
+        std::map<int, Edge> path_dict;
+        do {
+            const auto& current_index = frontier.front();
+            if (goal_test(vertex_at(current_index))) {
+                return path_dict_to_path(start_index, current_index, path_dict);
+            }
+            for (const auto& e: edges_for(current_index)) {
+                const auto to = e.second;
+                if (explored.find(to) == explored.end()) {
+                    explored.insert(to);
+                    frontier.push_back(to);
+                    path_dict[to] = e;
+                }
+            }
+            frontier.pop_front();
+        } while (!frontier.empty());
+        return {};
+    }
 
 private:
 
@@ -93,6 +116,14 @@ private:
             if (e.first == index) edges.push_back(e);
         }
         return edges;
+    }
+
+    Path<Vertex> path_dict_to_path(const int start_index, const int current_index, const std::map<int, Edge>& dict) {
+        std::vector<Vertex> tmp;
+        for (auto from = dict.at(current_index).first; from != start_index; from = dict.at(from).first) {
+            tmp.push_back(vertex_at(from));
+        }
+        return {tmp.crbegin(), tmp.crend()};
     }
 
     std::vector<Vertex> vertices_;
@@ -145,6 +176,7 @@ int main() {
         {seattle, chicago},
         {seattle, san_francisco},
         {san_francisco, riverside},
+        {san_francisco, los_angeles},
         {los_angeles, riverside},
         {los_angeles, phoenix},
         {riverside, phoenix},
@@ -169,4 +201,6 @@ int main() {
         {philadelphia, washington},
     });
     std::cout << g << '\n';
+    auto boston_to_miami = g.bfs(boston, [](const char* dest) { return dest == miami; });
+    std::cout << "Boston to Miami: " << boston_to_miami << '\n';
 }
