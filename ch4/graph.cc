@@ -4,8 +4,10 @@
 #include <functional>
 #include <iostream>
 #include <map>
+#include <numeric>
 #include <set>
 #include <sstream>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -146,9 +148,9 @@ private:
     std::vector<Edge> edges_;
 };
 
-template<typename Vertex>
+template <typename Vertex>
 struct UnweightedGraph {
-    UnweightedGraph(const std::vector<Vertex>& vertices) : g(vertices) {}
+    UnweightedGraph(const std::vector<Vertex>& vertices): g{vertices} {}
 
     void add_edge(const Vertex& from, const Vertex& to) {
         auto i = g.index_of(from);
@@ -195,6 +197,36 @@ std::ostream& operator<<(std::ostream& os, const UnweightedGraph<Vertex>& g) {
     return os << g.to_str();
 }
 
+template <typename Vertex, typename Weight = int>
+struct WeightedGraph {
+    WeightedGraph(const std::vector<Vertex>& vertices): g{vertices} {}
+
+    void add_edge(const Vertex& from, const Vertex& to, Weight weight) {
+        auto i = g.index_of(from);
+        auto j = g.index_of(to);
+        if (i != -1 && j != -1) g.add_edge({i, j, weight});
+    }
+
+    void add_edges(const std::vector<std::tuple<Vertex, Vertex, Weight>>& edges) {
+        for (const auto& e: edges) add_edge(std::get<0>(e),std::get<1>(e), std::get<2>(e));
+    }
+
+    std::string to_str() const { return g.to_str(); }
+
+private:
+    Graph<Vertex, WeightedEdge<Weight>> g;
+};
+
+template <typename Vertex>
+std::ostream& operator<<(std::ostream& os, const WeightedGraph<Vertex>& g) {
+    return os << g.to_str();
+}
+
+template <typename Weight>
+Weight total_weight(const std::vector<WeightedEdge<Weight>>& edges) {
+    return std::accumulate(edges.cbegin(), edges.cend(), Weight{});
+}
+
 const char* atlanta = "Atlanta";
 const char* boston = "Boston";
 const char* chicago = "Chicago";
@@ -212,7 +244,7 @@ const char* seattle = "Seattle";
 const char* washington = "Washington";
 
 int main() {
-    UnweightedGraph<const char*> g{{
+    std::vector<const char*> vertices{
         atlanta,
         boston,
         chicago,
@@ -228,8 +260,9 @@ int main() {
         san_francisco,
         seattle,
         washington,
-    }};
-    g.add_edges({
+    };
+    UnweightedGraph<const char*> ug{vertices};
+    ug.add_edges({
         {seattle, chicago},
         {seattle, san_francisco},
         {san_francisco, riverside},
@@ -257,7 +290,38 @@ int main() {
         {new_york, philadelphia},
         {philadelphia, washington},
     });
-    std::cout << g << '\n';
-    auto boston_to_miami = g.bfs(boston, [](const char* dest) { return dest == miami; });
+    std::cout << ug << '\n';
+    auto boston_to_miami = ug.bfs(boston, [](const char* dest) { return dest == miami; });
     std::cout << "Boston to Miami: " << boston_to_miami << '\n';
+
+    WeightedGraph<const char*> wg{vertices};
+    wg.add_edges({
+        {seattle, chicago, 1737},
+        {seattle, san_francisco, 678},
+        {san_francisco, riverside, 386},
+        {san_francisco, los_angeles, 348},
+        {los_angeles, riverside, 50},
+        {los_angeles, phoenix, 357},
+        {riverside, phoenix, 307},
+        {riverside, chicago, 1704},
+        {phoenix, dallas, 887},
+        {phoenix, houston, 1015},
+        {dallas, chicago, 805},
+        {dallas, atlanta, 721},
+        {dallas, houston, 225},
+        {houston, atlanta, 702},
+        {houston, miami, 968},
+        {atlanta, chicago, 588},
+        {atlanta, washington, 543},
+        {atlanta, miami, 604},
+        {miami, washington, 923},
+        {chicago, detroit, 238},
+        {detroit, boston, 613},
+        {detroit, washington, 396},
+        {detroit, new_york, 482},
+        {boston, new_york, 190},
+        {new_york, philadelphia, 81},
+        {philadelphia, washington, 123},
+    });
+    std::cout << wg << '\n';
 }
