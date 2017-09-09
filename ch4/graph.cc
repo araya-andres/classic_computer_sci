@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <numeric>
+#include <queue>
 #include <set>
 #include <sstream>
 #include <tuple>
@@ -52,11 +53,10 @@ std::ostream& operator<<(std::ostream& os, const WeightedEdge<Weight>& e) {
     return os << "{" << e.u << " <-(" << e.weight << ")-> " << e.v << "}";
 }
 
-template <typename Vertex>
-using Path = std::vector<Vertex>;
-
 template <typename Vertex, typename Edge = UnweightedEdge>
 struct Graph {
+    using Path = std::vector<Vertex>;
+
     Graph(const std::vector<Vertex>& vertices) : vertices_(vertices) {}
 
     // add a vertex to the graph
@@ -125,7 +125,7 @@ struct Graph {
         return edges;
     }
 
-    Path<Vertex> path_dict_to_path(const int start_index, const int current_index, const std::map<int, Edge>& dict) {
+    Path path_dict_to_path(const int start_index, const int current_index, const std::map<int, Edge>& dict) {
         std::vector<Vertex> tmp{vertex_at(current_index)};
         for (auto from = dict.at(current_index).u; from != start_index; from = dict.at(from).u) {
             tmp.push_back(vertex_at(from));
@@ -150,6 +150,10 @@ private:
 
 template <typename Vertex>
 struct UnweightedGraph {
+    using Edges = std::vector<std::pair<Vertex, Vertex>>;
+    using GoalTest = std::function<bool(const Vertex&)>;
+    using Path = std::vector<Vertex>;
+
     UnweightedGraph(const std::vector<Vertex>& vertices): g{vertices} {}
 
     void add_edge(const Vertex& from, const Vertex& to) {
@@ -158,11 +162,11 @@ struct UnweightedGraph {
         if (i != -1 && j != -1) g.add_edge({i, j});
     }
 
-    void add_edges(const std::vector<std::pair<Vertex, Vertex>>& edges) {
+    void add_edges(const Edges& edges) {
         for (const auto& e: edges) add_edge(e.first, e.second);
     }
 
-    Path<Vertex> bfs(const Vertex& v0, const std::function<bool(const Vertex&)>& goal_test) {
+    Path bfs(const Vertex& v0, const GoalTest& goal_test) {
         const auto start_index = g.index_of(v0);
         if (start_index == -1) return {};
         std::deque<int> frontier{start_index};
@@ -199,6 +203,8 @@ std::ostream& operator<<(std::ostream& os, const UnweightedGraph<Vertex>& g) {
 
 template <typename Vertex, typename Weight = int>
 struct WeightedGraph {
+    using Edge = WeightedEdge<Weight>;
+
     WeightedGraph(const std::vector<Vertex>& vertices): g{vertices} {}
 
     void add_edge(const Vertex& from, const Vertex& to, Weight weight) {
@@ -208,13 +214,35 @@ struct WeightedGraph {
     }
 
     void add_edges(const std::vector<std::tuple<Vertex, Vertex, Weight>>& edges) {
-        for (const auto& e: edges) add_edge(std::get<0>(e),std::get<1>(e), std::get<2>(e));
+        for (const auto& e: edges) add_edge(std::get<0>(e), std::get<1>(e), std::get<2>(e));
+    }
+
+    // find the minimum spanning tree in a weighted graph
+    auto mst(int start = 0) {
+        auto cmp = [](const Edge& e1, const Edge& e2){ return e1.weight > e2.weight; };
+        std::priority_queue<Edge, std::vector<Edge>, decltype(cmp)> pq(cmp);
+        std::vector<Edge> result;
+        std::vector<bool> visited(g.vertex_count());
+        auto visit = [&](int i){
+            visited[i] = true;
+            for (const auto& e: g.edges_for(i)) if (!visited[e.v]) pq.push(e);
+        };
+        visit(start);
+        while (!pq.empty()) {
+            const auto& e = pq.top();
+            if (!visited[e.v]) {
+                result.push_back(e);
+                visit(e.v);
+            }
+            pq.pop();
+        }
+        return result;
     }
 
     std::string to_str() const { return g.to_str(); }
 
 private:
-    Graph<Vertex, WeightedEdge<Weight>> g;
+    Graph<Vertex, Edge> g;
 };
 
 template <typename Vertex>
@@ -323,5 +351,5 @@ int main() {
         {new_york, philadelphia, 81},
         {philadelphia, washington, 123},
     });
-    std::cout << wg << '\n';
+    std::cout << wg.mst() << '\n';
 }
