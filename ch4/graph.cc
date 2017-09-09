@@ -5,18 +5,20 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <sstream>
 #include <utility>
 #include <vector>
 
 struct UnweightedEdge { int u, v; };
+
 UnweightedEdge reverse(const UnweightedEdge& e) { return {e.v, e.u}; }
 
 std::ostream& operator<<(std::ostream& os, const UnweightedEdge& e) {
-    return os << "(" << e.u << " <-> " << e.v << ")";
+    return os << "{" << e.u << " <-> " << e.v << "}";
 }
 
 bool operator==(const UnweightedEdge& lhs, const UnweightedEdge& rhs) {
-    return lhs.u == rhs.u && lhs.v == rhs.u;
+    return lhs.u == rhs.u && lhs.v == rhs.v;
 }
 
 bool operator<(const UnweightedEdge& lhs, const UnweightedEdge& rhs) {
@@ -30,14 +32,22 @@ struct WeightedEdge {
     Weight weight;
 };
 
+template<typename Weight>
+WeightedEdge<Weight> reverse(const WeightedEdge<Weight>& e) { return {e.v, e.u, e.weight}; }
+
 template <typename Weight>
 bool operator==(const WeightedEdge<Weight>& lhs, const WeightedEdge<Weight>& rhs) {
-    return lhs.u == rhs.u && lhs.v == rhs.u && lhs.weight == rhs.weight;
+    return lhs.u == rhs.u && lhs.v == rhs.v && lhs.weight == rhs.weight;
 }
 
 template <typename Weight>
 bool operator<(const WeightedEdge<Weight>& lhs, const WeightedEdge<Weight>& rhs) {
-    return lhs.u == rhs.u && lhs.v == rhs.u && lhs.weight < rhs.weight;
+    return lhs.u == rhs.u && lhs.v == rhs.v && lhs.weight < rhs.weight;
+}
+
+template <typename Weight>
+std::ostream& operator<<(std::ostream& os, const WeightedEdge<Weight>& e) {
+    return os << "{" << e.u << " <-(" << e.weight << ")-> " << e.v << "}";
 }
 
 template <typename Vertex>
@@ -47,23 +57,27 @@ template <typename Vertex, typename Edge = UnweightedEdge>
 struct Graph {
     Graph(const std::vector<Vertex>& vertices) : vertices_(vertices) {}
 
+    // add a vertex to the graph
     int add_vertex(const Vertex& v) {
         vertices_.push_back(v);
         return vertices_.size() - 1;
     }
 
-    void add_edge(const Vertex& from, const Vertex& to) {
-        auto i = index_of(from);
-        auto j = index_of(to);
-        if (i != -1 && j != -1) add_edge({i, j});
+    // add an edge to the graph
+    void add_edge(const Edge& e) {
+        auto first = edges_.cbegin();
+        auto last = edges_.cend();
+        auto it = find(first, last, e);
+        if (it == last) {
+            edges_.push_back(e);
+            edges_.push_back(reverse(e));
+        }
     }
 
-    void add_edges(const std::vector<std::pair<Vertex, Vertex>>& edges) {
-        for (const auto& e: edges) add_edge(e.first, e.second);
-    }
-
+    // how many vertices are in the graph?
     size_t vertex_count() const { return vertices_.size(); }
 
+    // how many edges are in the graph?
     size_t edge_count() const { return edges_.size(); }
 
     auto neighbors_for(const Vertex& v) const {
@@ -74,48 +88,12 @@ struct Graph {
         return edges_for(index_of(v));
     }
 
-    const std::vector<Vertex>& vertices() const { return vertices_; }
-
-    Path<Vertex> bfs(const Vertex& v0, const std::function<bool(const Vertex&)>& goal_test) {
-        const auto start_index = index_of(v0);
-        if (start_index == -1) return {};
-        std::deque<int> frontier{start_index};
-        std::set<int> explored;
-        std::map<int, Edge> path_dict;
-        do {
-            const auto& current_index = frontier.front();
-            if (goal_test(vertex_at(current_index))) {
-                return path_dict_to_path(start_index, current_index, path_dict);
-            }
-            for (const auto& e: edges_for(current_index)) {
-                const auto to = e.v;
-                if (explored.find(to) == explored.end()) {
-                    explored.insert(to);
-                    frontier.push_back(to);
-                    path_dict[to] = e;
-                }
-            }
-            frontier.pop_front();
-        } while (!frontier.empty());
-        return {};
-    }
-
-private:
-
-    void add_edge(const Edge& e) {
-        auto u = edges_.cbegin();
-        auto last = edges_.cend();
-        auto it = find(u, last, e);
-        if (it == last) {
-            edges_.push_back(e);
-            edges_.push_back(reverse(e));
-        }
-    }
-
+    // get vertex by index
     Vertex vertex_at(int index) const {
         return vertices_.at(index);
     }
 
+    // find the first occurence of a vertex if it exists
     int index_of(const Vertex& v) const {
         auto u = vertices_.cbegin();
         auto last = vertices_.cend();
@@ -125,6 +103,7 @@ private:
             : std::distance(u, it);
     }
 
+    // find all neighbors of a vertex at a given index
     auto neighbors_for(int index) const {
         std::vector<Vertex> neighbors;
         for (const auto& e: edges_) {
@@ -135,6 +114,7 @@ private:
         return neighbors;
     }
 
+    // find all vertex at the given index
     auto edges_for(int index) const {
         std::vector<Edge> edges;
         for (const auto& e : edges_) {
@@ -152,16 +132,67 @@ private:
         return {tmp.crbegin(), tmp.crend()};
     }
 
+    std::string to_str() const {
+        std::ostringstream oss;
+        for (const auto& v: vertices_) {
+            oss << v << " -> " << neighbors_for(v) << '\n';
+        }
+        return oss.str();
+    }
+
+private:
+
     std::vector<Vertex> vertices_;
     std::vector<Edge> edges_;
 };
 
-template <typename Vertex>
-std::ostream& operator<<(std::ostream& os, const Graph<Vertex>& g) {
-    for (const auto& v: g.vertices()) {
-        os << v << " -> " << g.neighbors_for(v) << '\n';
+template<typename Vertex>
+struct UnweightedGraph {
+    UnweightedGraph(const std::vector<Vertex>& vertices) : g(vertices) {}
+
+    void add_edge(const Vertex& from, const Vertex& to) {
+        auto i = g.index_of(from);
+        auto j = g.index_of(to);
+        if (i != -1 && j != -1) g.add_edge({i, j});
     }
-    return os;
+
+    void add_edges(const std::vector<std::pair<Vertex, Vertex>>& edges) {
+        for (const auto& e: edges) add_edge(e.first, e.second);
+    }
+
+    Path<Vertex> bfs(const Vertex& v0, const std::function<bool(const Vertex&)>& goal_test) {
+        const auto start_index = g.index_of(v0);
+        if (start_index == -1) return {};
+        std::deque<int> frontier{start_index};
+        std::set<int> explored;
+        std::map<int, UnweightedEdge> path_dict;
+        do {
+            const auto& current_index = frontier.front();
+            if (goal_test(g.vertex_at(current_index))) {
+                return g.path_dict_to_path(start_index, current_index, path_dict);
+            }
+            for (const auto& e: g.edges_for(current_index)) {
+                const auto to = e.v;
+                if (explored.find(to) == explored.end()) {
+                    explored.insert(to);
+                    frontier.push_back(to);
+                    path_dict[to] = e;
+                }
+            }
+            frontier.pop_front();
+        } while (!frontier.empty());
+        return {};
+    }
+
+    std::string to_str() const { return g.to_str(); }
+
+private:
+    Graph<Vertex, UnweightedEdge> g;
+};
+
+template <typename Vertex>
+std::ostream& operator<<(std::ostream& os, const UnweightedGraph<Vertex>& g) {
+    return os << g.to_str();
 }
 
 const char* atlanta = "Atlanta";
@@ -181,7 +212,7 @@ const char* seattle = "Seattle";
 const char* washington = "Washington";
 
 int main() {
-    Graph<const char*> g{{
+    UnweightedGraph<const char*> g{{
         atlanta,
         boston,
         chicago,
