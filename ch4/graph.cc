@@ -220,7 +220,7 @@ struct WeightedGraph {
     // find the minimum spanning tree in a weighted graph
     auto mst(int start = 0) {
         auto cmp = [](const Edge& e1, const Edge& e2){ return e1.weight > e2.weight; };
-        std::priority_queue<Edge, std::vector<Edge>, decltype(cmp)> pq(cmp);
+        std::priority_queue<Edge, std::vector<Edge>, decltype(cmp)> pq{cmp};
         std::vector<Edge> result;
         std::vector<bool> visited(g.vertex_count());
         auto visit = [&](int i){
@@ -237,6 +237,41 @@ struct WeightedGraph {
             pq.pop();
         }
         return result;
+    }
+
+    auto dijkstra(int root, Weight start_distance = Weight{}) {
+        using namespace std;
+        struct DijkstraNode {
+            int vertex;
+            Weight distance;
+            bool operator==(const DijkstraNode& other) { return distance == other.distance; }
+            bool operator<(const DijkstraNode& other) { return distance < other.distance; }
+        };
+        auto cmp = [](const DijkstraNode& n1, const DijkstraNode& n2) { return n1.distance > n2.distance; };
+        priority_queue<DijkstraNode, vector<DijkstraNode>, decltype(cmp)> pq{cmp};
+        map<int, Weight> distances{{root, start_distance}};
+        map<int, Edge> path_dict;
+        for (pq.push({root, start_distance}); !pq.empty(); pq.pop()) {
+            const auto u = pq.top().vertex;
+            auto it = distances.find(u);
+            if (it == distances.end()) continue;
+            const auto dist_u = it->second;
+            for (const auto& e: g.edges_for(u)) {
+                const auto v = e.v;
+                const auto dist_v = e.weight + dist_u;
+                it = distances.find(v);
+                if (it == distances.end() || dist_v < it->second) {
+                    distances[v] = dist_v;
+                    path_dict[v] = e;
+                    pq.push({v, dist_v});
+                }
+            }
+        }
+        return pair<map<int, Weight>, map<int, Edge>>{distances, path_dict};
+    }
+
+    auto dijkstra(const Vertex& v) {
+        return dijkstra(g.index_of(v));
     }
 
     std::string to_str() const { return g.to_str(); }
@@ -351,5 +386,5 @@ int main() {
         {new_york, philadelphia, 81},
         {philadelphia, washington, 123},
     });
-    std::cout << wg.mst() << '\n';
+    std::cout << wg.dijkstra(los_angeles) << '\n';
 }
