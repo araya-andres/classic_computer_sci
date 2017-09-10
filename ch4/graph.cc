@@ -267,11 +267,15 @@ struct WeightedGraph {
                 }
             }
         }
-        return pair<map<int, Weight>, map<int, Edge>>{distances, path_dict};
+        return distances;
     }
 
     auto dijkstra(const Vertex& v) {
-        return dijkstra(g.index_of(v));
+        std::map<Weight, Vertex> ans;
+        for (const auto& pair: dijkstra(g.index_of(v))) {
+            ans[pair.second] = g.vertex_at(pair.first);
+        }
+        return ans;
     }
 
     std::string to_str() const { return g.to_str(); }
