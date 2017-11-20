@@ -3,4 +3,4 @@ CXXFLAGS=-std=c++1z -Wall -pedantic -g -I ../cxx-prettyprint/ -I ../range-v3/inc
 main: simple_equation.o
 
 clean:
-	rm -rf main *.dSYM
+	rm -rf main *.o *.dSYM

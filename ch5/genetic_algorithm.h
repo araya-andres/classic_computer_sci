@@ -17,35 +17,38 @@ template<typename C>
 using Population = std::vector<C>;
 
 template<typename C>
-using Fitness = std::function<double(const C&)>;
+using FitnessFn = std::function<double(const C&)>;
 
 template<typename C>
-using RandomInstance = std::function<C()>;
+using RandomInstanceFn = std::function<C()>;
 
 template<typename C>
-using Crossover = std::function<std::pair<C, C>(const C&, const C&)>;
+using CrossoverFn = std::function<std::pair<C, C>(const C&, const C&)>;
 
 template<typename C>
-using Mutation = std::function<void(C&)>;
+using MutateFn = std::function<void(C&)>;
 
 template<typename C>
-using Picker = std::function<const C&(const Population<C>&, const Fitness<C>&)>;
+using PickFn = std::function<const C&(const Population<C>&, const FitnessFn<C>&)>;
 
-// Returns a random number between 0 (inclusive) and 1 (exclusive)
-static double ga_random()
+struct Random
 {
-    static std::random_device rd;
-    static std::mt19937_64 gen{rd()};
-    static std::uniform_real_distribution<> dist{.0, 1.0};
-    return dist(gen);
-}
+    // Returns a random number between 0 (inclusive) and 1 (exclusive)
+    static double get()
+    {
+        static std::random_device rd;
+        static std::mt19937_64 gen{rd()};
+        static std::uniform_real_distribution<> dist{.0, 1.0};
+        return dist(gen);
+    }
+};
 
 // pick based on the proportion of summed total fitness that each
 // individual represents
 template<typename C>
 struct Roulette
 {
-    const C& operator()(const Population<C>& population, const Fitness<C>& fitness_fn)
+    const C& operator()(const Population<C>& population, const FitnessFn<C>& fitness_fn)
     {
         using namespace ranges::v3;
 
@@ -55,7 +58,7 @@ struct Roulette
         const auto cumulative_dist = fitness_cache
             | view::transform([sum](const auto& f){ return f/sum; })
             | view::partial_sum();
-        const auto p = ga_random();
+        const auto p = Random::get();
         const auto it = find_if(cumulative_dist, [p](double pc){ return p < pc; });
         const auto index = std::distance(cumulative_dist.begin(), it);
         return population[index];
@@ -68,7 +71,7 @@ struct Tournament
 {
     Tournament(size_t n = 4): n_{n} {}
 
-    const C& operator()(const Population<C>& population, const Fitness<C>& fitness_fn)
+    const C& operator()(const Population<C>& population, const FitnessFn<C>& fitness_fn)
     {
         std::vector<size_t> indexes(population.size());
         std::iota(indexes.begin(), indexes.end(), 0);
@@ -101,11 +104,11 @@ public:
 
     C run();
 
-    Fitness<C> fitness_fn;
-    RandomInstance<C> random_instance_fn;
-    Crossover<C> crossover_fn;
-    Mutation<C> mutation_fn;
-    Picker<C> pick_fn{Tournament<C>{}};
+    FitnessFn<C> fitness_fn;
+    RandomInstanceFn<C> random_instance_fn;
+    CrossoverFn<C> crossover_fn;
+    MutateFn<C> mutate_fn;
+    PickFn<C> pick_fn{Tournament<C>{}};
 
 private:
     void reproduce_and_replace();
@@ -129,12 +132,10 @@ C GeneticAlgorithm<C>::run()
     auto best = &population_[0];
     auto best_fitness = fitness_fn(*best);
     for (size_t generation = 0; generation < max_generations_; ++generation) {
-        std::cout
-            << "generation " << generation << ", "
-            << "best " << best_fitness << ", "
-            << "avg " << "FIXME" << '\n';
+        auto fitness_sum = .0;
         for (size_t j = 0; j < size_; ++j) {
             fitness_cache[j] = fitness_fn(population_[j]);
+            fitness_sum += fitness_cache[j];
             if (fitness_cache[j] > threshold_) {
                 return population_[j];
             }
@@ -143,6 +144,10 @@ C GeneticAlgorithm<C>::run()
                 best = &population_[j];
             }
         }
+        std::cout
+            << "generation " << generation << ", "
+            << "best " << best_fitness << ", "
+            << "avg " << fitness_sum/size_ << '\n';
         reproduce_and_replace();
         mutate();
     }
@@ -156,7 +161,7 @@ void GeneticAlgorithm<C>::reproduce_and_replace()
     new_population.reserve(size_ + 1);
     while (new_population.size() < population_.size()) {
         const auto& [parent1, parent2] = get_parents();
-        if (ga_random() < crossover_chance_) {
+        if (Random::get() < crossover_chance_) {
             const auto [child1, child2] = crossover_fn(parent1, parent2);
             new_population.push_back(child1);
             new_population.push_back(child2);
@@ -175,8 +180,8 @@ template<typename C>
 void GeneticAlgorithm<C>::mutate()
 {
     for (auto& c: population_) {
-        if (ga_random() < mutation_chance_) {
-            mutation_fn(c);
+        if (Random::get() < mutation_chance_) {
+            mutate_fn(c);
         }
     }
 }

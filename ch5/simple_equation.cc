@@ -17,10 +17,10 @@ std::ostream& operator<<(std::ostream& os, const Point& p)
 
 void do_mutation(Point& p)
 {
-    if (ga_random() < .5) {
-        p.x += (ga_random() < .5 ? 1 : -1);
+    if (Random::get() < .5) {
+        p.x += (Random::get() < .5 ? 1 : -1);
     } else {
-        p.y += (ga_random() < .5 ? 1 : -1);
+        p.y += (Random::get() < .5 ? 1 : -1);
     }
 }
 
@@ -31,11 +31,11 @@ void solve_simple_equation()
         return 6 * p.x - p.x * p.x + 4 * p.y - p.y * p.y;
     };
     ga.random_instance_fn = []() -> Point {
-        return {MAX_VAL * ga_random() , MAX_VAL * ga_random()};
+        return {MAX_VAL * Random::get() , MAX_VAL * Random::get()};
     };
     ga.crossover_fn = [](const Point& p, const Point& q) {
         return std::pair<Point, Point>{{p.x, q.y}, {q.x, p.y}};
     };
-    ga.mutation_fn = do_mutation;
+    ga.mutate_fn = do_mutation;
     std::cout << ga.run() << '\n';
 }
