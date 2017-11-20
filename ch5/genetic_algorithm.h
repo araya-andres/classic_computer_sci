@@ -36,16 +36,16 @@ using Picker = std::function<const C&(const Population<C>&, const Fitness<C>&)>;
 template<typename C>
 struct Roulette
 {
-    const C& operator()(const Population<C>& population, const Fitness<C>& fitness_)
+    const C& operator()(const Population<C>& population, const Fitness<C>& fitness_fn)
     {
         static std::random_device rd;
         static std::mt19937_64 gen{rd()};
-        static std::uniform_real_distribution<double> dist{0, 1};
+        static std::uniform_real_distribution<> dist{.0, 1.0};
 
         using namespace ranges::v3;
 
         const auto fitness_cache = population
-            | view::transform([&fitness_](const C& c){ return fitness_(c); });
+            | view::transform([&fitness_fn](const C& c){ return fitness_fn(c); });
         const auto sum = accumulate(fitness_cache, .0);
         const auto cumulative_dist = fitness_cache
             | view::transform([sum](const auto& f){ return f/sum; })
@@ -63,19 +63,19 @@ struct Tournament
 {
     Tournament(size_t n = 4): n_{n} {}
 
-    const C& operator()(const Population<C>& population, const Fitness<C>& fitness_)
+    const C& operator()(const Population<C>& population, const Fitness<C>& fitness_fn)
     {
         std::vector<size_t> indexes(population.size());
         std::iota(indexes.begin(), indexes.end(), 0);
         std::random_shuffle(indexes.begin(), indexes.end());
         auto best = &population[indexes[0]];
-        auto best_fitness = fitness_(*best);
+        auto best_fitness = fitness_fn(*best);
         for (int i = 1; i < n_; i++) {
             auto candidate = &population[indexes[i]];
-            auto fitness = fitness_(*candidate);
-            if (fitness > best_fitness) {
+            auto candidate_fitness = fitness_fn(*candidate);
+            if (candidate_fitness > best_fitness) {
                 best = candidate;
-                best_fitness = fitness;
+                best_fitness = candidate_fitness;
             }
         }
         return *best;
@@ -96,10 +96,11 @@ public:
 
     C run();
 
-    Fitness<C> fitness_;
-    RandomInstance<C> random_instance_;
-    Crossover<C> crossover_;
-    Mutation<C> mutation_;
+    Fitness<C> fitness_fn;
+    RandomInstance<C> random_instance_fn;
+    Crossover<C> crossover_fn;
+    Mutation<C> mutation_fn;
+    Picker<C> pick_fn{Tournament<C>{}};
 
 private:
     void reproduce_and_replace();
@@ -116,7 +117,6 @@ private:
     unsigned max_generations_{100};
     double mutation_chance_{.01};
     double crossover_chance_{.7};
-    Picker<C> pick_{Tournament<C>{}};
 };
 
 template<typename C>
@@ -124,16 +124,16 @@ C GeneticAlgorithm<C>::run()
 {
     std::vector<double> fitness_cache(size_);
     population_.reserve(size_);
-    std::generate_n(std::back_inserter(population_), size_, random_instance_);
+    std::generate_n(std::back_inserter(population_), size_, random_instance_fn);
     auto best = &population_[0];
-    auto best_fitness = fitness_(*best);
+    auto best_fitness = fitness_fn(*best);
     for (auto generation = 0; generation < max_generations_; ++generation) {
         std::cout
             << "generation " << generation << ", "
             << "best " << best_fitness << ", "
             << "avg " << "FIXME" << '\n';
         for (auto j = 0; j < size_; ++j) {
-            fitness_cache[j] = fitness_(population_[j]);
+            fitness_cache[j] = fitness_fn(population_[j]);
             if (fitness_cache[j] > threshold_) {
                 return population_[j];
             }
@@ -156,7 +156,7 @@ void GeneticAlgorithm<C>::reproduce_and_replace()
     while (new_population.size() < population_.size()) {
         const auto& [parent1, parent2] = get_parents();
         if (dist_(gen_) < crossover_chance_) {
-            const auto [child1, child2] = crossover_(parent1, parent2);
+            const auto [child1, child2] = crossover_fn(parent1, parent2);
             new_population.push_back(child1);
             new_population.push_back(child2);
         } else {
@@ -175,7 +175,7 @@ void GeneticAlgorithm<C>::mutate()
 {
     for (auto& c: population_) {
         if (dist_(gen_) < mutation_chance_) {
-            mutation_(c);
+            mutation_fn(c);
         }
     }
 }
@@ -183,7 +183,7 @@ void GeneticAlgorithm<C>::mutate()
 template<typename C>
 auto GeneticAlgorithm<C>::get_parents()
 {
-    return std::make_pair(pick_(population_, fitness_), pick_(population_, fitness_));
+    return std::make_pair(pick_fn(population_, fitness_fn), pick_fn(population_, fitness_fn));
 }
 
 #endif

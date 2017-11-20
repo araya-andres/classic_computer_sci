@@ -33,9 +33,9 @@ int main()
 {
     gen.seed(time(nullptr));
     GeneticAlgorithm<Point> ga{13.0};
-    ga.fitness_ = [](const Point& p){ return 6*p.x - p.x*p.x + 4*p.y - p.y*p.y; };
-    ga.random_instance_ = []{ return Point{MAX_VAL * dist(gen) , MAX_VAL * dist(gen)}; };
-    ga.crossover_ = [](const Point& p, const Point& q){ return std::pair<Point, Point>{{p.x, q.y}, {q.x, p.y}}; };
-    ga.mutation_ = do_mutation;
+    ga.fitness_fn = [](const Point& p){ return 6*p.x - p.x*p.x + 4*p.y - p.y*p.y; };
+    ga.random_instance_fn = []{ return Point{MAX_VAL * dist(gen) , MAX_VAL * dist(gen)}; };
+    ga.crossover_fn = [](const Point& p, const Point& q){ return std::pair<Point, Point>{{p.x, q.y}, {q.x, p.y}}; };
+    ga.mutation_fn = do_mutation;
     std::cout << ga.run() << '\n';
 }
