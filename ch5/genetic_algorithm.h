@@ -70,7 +70,7 @@ struct Tournament
         std::random_shuffle(indexes.begin(), indexes.end());
         auto best = &population[indexes[0]];
         auto best_fitness = fitness_fn(*best);
-        for (int i = 1; i < n_; i++) {
+        for (size_t i = 1; i < n_; i++) {
             auto candidate = &population[indexes[i]];
             auto candidate_fitness = fitness_fn(*candidate);
             if (candidate_fitness > best_fitness) {
@@ -114,7 +114,7 @@ private:
     double threshold_;
     size_t size_;
     Population<C> population_;
-    unsigned max_generations_{100};
+    size_t max_generations_{100};
     double mutation_chance_{.01};
     double crossover_chance_{.7};
 };
@@ -127,12 +127,12 @@ C GeneticAlgorithm<C>::run()
     std::generate_n(std::back_inserter(population_), size_, random_instance_fn);
     auto best = &population_[0];
     auto best_fitness = fitness_fn(*best);
-    for (auto generation = 0; generation < max_generations_; ++generation) {
+    for (size_t generation = 0; generation < max_generations_; ++generation) {
         std::cout
             << "generation " << generation << ", "
             << "best " << best_fitness << ", "
             << "avg " << "FIXME" << '\n';
-        for (auto j = 0; j < size_; ++j) {
+        for (size_t j = 0; j < size_; ++j) {
             fitness_cache[j] = fitness_fn(population_[j]);
             if (fitness_cache[j] > threshold_) {
                 return population_[j];
