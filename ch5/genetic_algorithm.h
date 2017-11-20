@@ -16,6 +16,7 @@
 template<typename C>
 using Population = std::vector<C>;
 
+// Callbacks signatures.
 template<typename C>
 using FitnessFn = std::function<double(const C&)>;
 
@@ -31,9 +32,46 @@ using MutateFn = std::function<void(C&)>;
 template<typename C>
 using PickFn = std::function<const C&(const Population<C>&, const FitnessFn<C>&)>;
 
+// Default callbacks throw an exception if called.
+template<typename C>
+struct DefaultFitnessFn
+{
+    double operator()(const C&)
+    {
+        throw std::runtime_error{"no suitable fitness callback"};
+    }
+};
+
+template<typename C>
+struct DefaultRandomInstanceFn
+{
+    C operator()()
+    {
+        throw std::runtime_error{"no suitable random instance callback"};
+    }
+};
+
+template<typename C>
+struct DefaultCrossoverFn
+{
+    std::pair<C, C> operator()(const C&, const C&)
+    {
+        throw std::runtime_error{"no suitable crossover callback"};
+    }
+};
+
+template<typename C>
+struct DefaultMutateFn
+{
+    void operator()(C&)
+    {
+        // do nothing
+    }
+};
+
+// Returns a random number between 0 (inclusive) and 1 (exclusive)
 struct Random
 {
-    // Returns a random number between 0 (inclusive) and 1 (exclusive)
     static double get()
     {
         static std::random_device rd;
@@ -43,7 +81,7 @@ struct Random
     }
 };
 
-// pick based on the proportion of summed total fitness that each
+// Pick based on the proportion of summed total fitness that each
 // individual represents
 template<typename C>
 struct Roulette
@@ -65,7 +103,7 @@ struct Roulette
     }
 };
 
-// find k random individuals in the population and pick the best one
+// Find k random individuals in the population and pick the best one
 template<typename C>
 struct Tournament
 {
@@ -97,17 +135,21 @@ template<typename C>
 class GeneticAlgorithm
 {
 public:
-    GeneticAlgorithm(double threshold, size_t size=10): threshold_(threshold), size_(size)
+    GeneticAlgorithm(double threshold, size_t size=10)
+        : threshold_(threshold)
+        , size_(size)
     {
-        if (size_ == 0) throw std::runtime_error{""};
+        if (size_ == 0) {
+            throw std::runtime_error{"population must be greater than 0"};
+        }
     }
 
     C run();
 
-    FitnessFn<C> fitness_fn;
-    RandomInstanceFn<C> random_instance_fn;
-    CrossoverFn<C> crossover_fn;
-    MutateFn<C> mutate_fn;
+    FitnessFn<C> fitness_fn{DefaultFitnessFn<C>{}};
+    RandomInstanceFn<C> random_instance_fn{DefaultRandomInstanceFn<C>{}};
+    CrossoverFn<C> crossover_fn{DefaultCrossoverFn<C>{}};
+    MutateFn<C> mutate_fn{DefaultMutateFn<C>{}};
     PickFn<C> pick_fn{Tournament<C>{}};
 
 private:
@@ -135,10 +177,10 @@ C GeneticAlgorithm<C>::run()
         auto fitness_sum = .0;
         for (size_t j = 0; j < size_; ++j) {
             fitness_cache[j] = fitness_fn(population_[j]);
-            fitness_sum += fitness_cache[j];
             if (fitness_cache[j] > threshold_) {
                 return population_[j];
             }
+            fitness_sum += fitness_cache[j];
             if (fitness_cache[j] > best_fitness) {
                 best_fitness = fitness_cache[j];
                 best = &population_[j];
@@ -158,7 +200,7 @@ template<typename C>
 void GeneticAlgorithm<C>::reproduce_and_replace()
 {
     Population<C> new_population;
-    new_population.reserve(size_ + 1);
+    new_population.reserve(size_);
     while (new_population.size() < population_.size()) {
         const auto& [parent1, parent2] = get_parents();
         if (Random::get() < crossover_chance_) {
@@ -189,7 +231,10 @@ void GeneticAlgorithm<C>::mutate()
 template<typename C>
 auto GeneticAlgorithm<C>::get_parents()
 {
-    return std::make_pair(pick_fn(population_, fitness_fn), pick_fn(population_, fitness_fn));
+    return std::make_pair(
+            pick_fn(population_, fitness_fn),
+            pick_fn(population_, fitness_fn)
+            );
 }
 
 #endif

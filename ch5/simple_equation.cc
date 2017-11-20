@@ -15,7 +15,7 @@ std::ostream& operator<<(std::ostream& os, const Point& p)
     return os << '{' << p.x << ',' << p.y << '}';
 }
 
-void do_mutation(Point& p)
+void mutate(Point& p)
 {
     if (Random::get() < .5) {
         p.x += (Random::get() < .5 ? 1 : -1);
@@ -36,6 +36,6 @@ void solve_simple_equation()
     ga.crossover_fn = [](const Point& p, const Point& q) {
         return std::pair<Point, Point>{{p.x, q.y}, {q.x, p.y}};
     };
-    ga.mutate_fn = do_mutation;
+    ga.mutate_fn = mutate;
     std::cout << ga.run() << '\n';
 }
