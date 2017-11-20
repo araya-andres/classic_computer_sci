@@ -31,6 +31,15 @@ using Mutation = std::function<void(C&)>;
 template<typename C>
 using Picker = std::function<const C&(const Population<C>&, const Fitness<C>&)>;
 
+// Returns a random number between 0 (inclusive) and 1 (exclusive)
+static double ga_random()
+{
+    static std::random_device rd;
+    static std::mt19937_64 gen{rd()};
+    static std::uniform_real_distribution<> dist{.0, 1.0};
+    return dist(gen);
+}
+
 // pick based on the proportion of summed total fitness that each
 // individual represents
 template<typename C>
@@ -38,10 +47,6 @@ struct Roulette
 {
     const C& operator()(const Population<C>& population, const Fitness<C>& fitness_fn)
     {
-        static std::random_device rd;
-        static std::mt19937_64 gen{rd()};
-        static std::uniform_real_distribution<> dist{.0, 1.0};
-
         using namespace ranges::v3;
 
         const auto fitness_cache = population
@@ -50,7 +55,7 @@ struct Roulette
         const auto cumulative_dist = fitness_cache
             | view::transform([sum](const auto& f){ return f/sum; })
             | view::partial_sum();
-        const auto p = dist(gen);
+        const auto p = ga_random();
         const auto it = find_if(cumulative_dist, [p](double pc){ return p < pc; });
         const auto index = std::distance(cumulative_dist.begin(), it);
         return population[index];
@@ -107,10 +112,6 @@ private:
     void mutate();
     auto get_parents();
 
-    static inline std::random_device rd_;
-    static inline std::mt19937_64 gen_{rd_()};
-    static inline std::uniform_real_distribution<double> dist_{0, 1};
-
     double threshold_;
     size_t size_;
     Population<C> population_;
@@ -155,7 +156,7 @@ void GeneticAlgorithm<C>::reproduce_and_replace()
     new_population.reserve(size_ + 1);
     while (new_population.size() < population_.size()) {
         const auto& [parent1, parent2] = get_parents();
-        if (dist_(gen_) < crossover_chance_) {
+        if (ga_random() < crossover_chance_) {
             const auto [child1, child2] = crossover_fn(parent1, parent2);
             new_population.push_back(child1);
             new_population.push_back(child2);
@@ -174,7 +175,7 @@ template<typename C>
 void GeneticAlgorithm<C>::mutate()
 {
     for (auto& c: population_) {
-        if (dist_(gen_) < mutation_chance_) {
+        if (ga_random() < mutation_chance_) {
             mutation_fn(c);
         }
     }
