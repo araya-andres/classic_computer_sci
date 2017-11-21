@@ -1,6 +1,7 @@
 CXXFLAGS=-std=c++1z -Wall -pedantic -g -I ../cxx-prettyprint/ -I ../range-v3/include/
+BINS=simple-equation send-more
 
-main: simple_equation.o
+all: $(BINS)
 
 clean:
-	rm -rf main *.o *.dSYM
+	rm -rf $(BINS) *.dSYM

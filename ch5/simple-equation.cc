@@ -1,5 +1,4 @@
-#include "genetic_algorithm.h"
-#include "simple_equation.h"
+#include "genetic-algorithm.h"
 #include <iostream>
 
 const static double MAX_VAL = 100.0;
@@ -24,7 +23,8 @@ void mutate(Point& p)
     }
 }
 
-void solve_simple_equation()
+
+int main()
 {
     GeneticAlgorithm<Point> ga{13.0};
     ga.fitness_fn = [](const Point& p) -> double {
