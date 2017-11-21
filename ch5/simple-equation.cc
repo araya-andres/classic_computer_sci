@@ -23,7 +23,6 @@ void mutate(Point& p)
     }
 }
 
-
 int main()
 {
     GeneticAlgorithm<Point> ga{13.0};
