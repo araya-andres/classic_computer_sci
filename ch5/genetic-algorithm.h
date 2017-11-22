@@ -1,7 +1,6 @@
 #ifndef GENETIC_ALGORITHM_H
 #define GENETIC_ALGORITHM_H
 
-#include "prettyprint.hpp"
 #include "range/v3/all.hpp"
 #include <algorithm>
 #include <functional>
