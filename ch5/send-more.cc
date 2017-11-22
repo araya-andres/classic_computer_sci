@@ -3,13 +3,47 @@
 #include <algorithm>
 #include <vector>
 #include <utility>
+#include <map>
 
 using Genes = std::vector<char>;
+using Index = std::map<char, size_t>;
 
 const Genes letters{'S','E','N','D','M','O','R','E','Y',' ',' '};
 
+std::pair<Index, bool> get_index(const Genes& genes)
+{
+    Index index;
+    auto begin = genes.cbegin();
+    auto end = genes.cend();
+    for (size_t i = 0, n = letters.size() - 2; i < n; ++i) {
+        char c = letters[i];
+        auto it = std::find(begin, end, c);
+        if (it == end) {
+            return {{}, false};
+        }
+        index[c] = std::distance(it, begin);
+    }
+    return {index, true};
+}
+
+int word_to_value(const std::string& word, const Index& index)
+{
+    int value = 0;
+    for (auto c: word) {
+        value = 10 * value + index.at(c);
+    }
+    return value;
+}
+
 double fitness(const Genes& genes)
 {
+    if (auto [index, ok] = get_index(genes); ok) {
+        auto send = word_to_value("SEND", index);
+        auto more = word_to_value("MORE", index);
+        auto money = word_to_value("MONEY", index);
+        auto diff = std::abs(money - send - more);
+        return 1.0 / (diff + 1.0);
+    }
     return .0;
 }
 
@@ -44,8 +78,11 @@ void mutate(Genes& genes)
 
 int main()
 {
-    GeneticAlgorithm<Genes> ga{.0}; // FIXME
+    GeneticAlgorithm<Genes> ga{1.0};
+    ga.fitness_fn = fitness;
     ga.random_instance_fn = random_instance;
     ga.crossover_fn = crossover;
     ga.mutate_fn = mutate;
+    auto best = ga.run();
+    std::cout << best << '\n';
 }
