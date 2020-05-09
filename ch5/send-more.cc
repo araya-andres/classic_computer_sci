@@ -50,7 +50,9 @@ double fitness(const Genes& genes)
 Genes random_instance()
 {
     Genes genes{letters};
-    std::random_shuffle(genes.begin(), genes.end());
+    std::random_device rd;
+    std::mt19937_64 gen{rd()};
+    std::shuffle(genes.begin(), genes.end(), gen);
     return genes;
 }
 

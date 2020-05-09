@@ -110,9 +110,13 @@ struct Tournament
 
     const C& operator()(const Population<C>& population, const FitnessFn<C>& fitness_fn)
     {
-        std::vector<size_t> indexes(population.size());
+        std::random_device rd;
+        std::mt19937_64 gen{rd()};
+        std::vector<size_t> indexes;
+
+        indexes.reserve(population.size());
         std::iota(indexes.begin(), indexes.end(), 0);
-        std::random_shuffle(indexes.begin(), indexes.end());
+        std::shuffle(indexes.begin(), indexes.end(), gen);
         auto best = &population[indexes[0]];
         auto best_fitness = fitness_fn(*best);
         for (size_t i = 1; i < n_; i++) {
