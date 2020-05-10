@@ -1,14 +1,22 @@
-#include "prettyprint.hpp"
-#include "genetic-algorithm.h"
 #include <algorithm>
-#include <vector>
-#include <utility>
 #include <map>
+#include <utility>
+#include <vector>
+
+#include "prettyprint.hpp"
+
+#include "genetic-algorithm.h"
 
 using Genes = std::vector<char>;
 using Index = std::map<char, size_t>;
 
 const Genes letters{'S','E','N','D','M','O','R','E','Y',' ',' '};
+
+int pow10(int exp) {
+    int ans = 1;
+    for (; exp > 0; exp--) ans *= 10;
+    return ans;
+}
 
 std::pair<Index, bool> get_index(const Genes& genes)
 {
@@ -26,11 +34,11 @@ std::pair<Index, bool> get_index(const Genes& genes)
     return {index, true};
 }
 
-int word_to_value(const std::string& word, const Index& index)
+int word_to_value(const std::string word, const Index& index)
 {
-    int value = 0;
-    for (auto c: word) {
-        value = 10 * value + index.at(c);
+    auto value = 0;
+    for (auto i = 0; i < word.size(); i++) {
+        value += pow10(i) * word[i];
     }
     return value;
 }
