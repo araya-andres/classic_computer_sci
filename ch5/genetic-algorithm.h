@@ -12,57 +12,57 @@
 #include <stdexcept>
 #include <vector>
 
-template<typename C>
-using Population = std::vector<C>;
+template<typename Chromosome>
+using Population = std::vector<Chromosome>;
 
 // Callbacks signatures.
-template<typename C>
-using FitnessFn = std::function<double(const C&)>;
+template<typename Chromosome>
+using FitnessFn = std::function<double(const Chromosome&)>;
 
-template<typename C>
-using RandomInstanceFn = std::function<C()>;
+template<typename Chromosome>
+using RandomInstanceFn = std::function<Chromosome()>;
 
-template<typename C>
-using CrossoverFn = std::function<std::pair<C, C>(const C&, const C&)>;
+template<typename Chromosome>
+using CrossoverFn = std::function<std::pair<Chromosome, Chromosome>(const Chromosome&, const Chromosome&)>;
 
-template<typename C>
-using MutateFn = std::function<void(C&)>;
+template<typename Chromosome>
+using MutateFn = std::function<void(Chromosome&)>;
 
-template<typename C>
-using PickFn = std::function<const C&(const Population<C>&, const FitnessFn<C>&)>;
+template<typename Chromosome>
+using PickFn = std::function<const Chromosome&(const Population<Chromosome>&, const FitnessFn<Chromosome>&)>;
 
 // Default callbacks throw an exception if called.
-template<typename C>
+template<typename Chromosome>
 struct DefaultFitnessFn
 {
-    double operator()(const C&)
+    double operator()(const Chromosome&)
     {
         throw std::runtime_error{"no suitable fitness callback"};
     }
 };
 
-template<typename C>
+template<typename Chromosome>
 struct DefaultRandomInstanceFn
 {
-    C operator()()
+    Chromosome operator()()
     {
         throw std::runtime_error{"no suitable random instance callback"};
     }
 };
 
-template<typename C>
+template<typename Chromosome>
 struct DefaultCrossoverFn
 {
-    std::pair<C, C> operator()(const C&, const C&)
+    std::pair<Chromosome, Chromosome> operator()(const Chromosome&, const Chromosome&)
     {
         throw std::runtime_error{"no suitable crossover callback"};
     }
 };
 
-template<typename C>
+template<typename Chromosome>
 struct DefaultMutateFn
 {
-    void operator()(C&)
+    void operator()(Chromosome&)
     {
         // do nothing
     }
@@ -82,15 +82,15 @@ struct Random
 
 // Pick based on the proportion of summed total fitness that each
 // individual represents
-template<typename C>
+template<typename Chromosome>
 struct Roulette
 {
-    const C& operator()(const Population<C>& population, const FitnessFn<C>& fitness_fn)
+    const Chromosome& operator()(const Population<Chromosome>& population, const FitnessFn<Chromosome>& fitness_fn)
     {
         using namespace ranges::v3;
 
         const auto fitness_cache = population
-            | view::transform([&fitness_fn](const C& c){ return fitness_fn(c); });
+            | view::transform([&fitness_fn](const Chromosome& c){ return fitness_fn(c); });
         const auto sum = accumulate(fitness_cache, .0);
         const auto cumulative_dist = fitness_cache
             | view::transform([sum](const auto& f){ return f/sum; })
@@ -103,18 +103,16 @@ struct Roulette
 };
 
 // Find k random individuals in the population and pick the best one
-template<typename C>
+template<typename Chromosome>
 struct Tournament
 {
     Tournament(size_t n = 4): n_{n} {}
 
-    const C& operator()(const Population<C>& population, const FitnessFn<C>& fitness_fn)
+    const Chromosome& operator()(const Population<Chromosome>& population, const FitnessFn<Chromosome>& fitness_fn)
     {
         std::random_device rd;
         std::mt19937_64 gen{rd()};
         std::vector<size_t> indexes;
-
-        indexes.reserve(population.size());
         std::iota(indexes.begin(), indexes.end(), 0);
         std::shuffle(indexes.begin(), indexes.end(), gen);
         auto best = &population[indexes[0]];
@@ -134,7 +132,7 @@ private:
     size_t n_;
 };
 
-template<typename C>
+template<typename Chromosome>
 class GeneticAlgorithm
 {
 public:
@@ -147,13 +145,13 @@ public:
         }
     }
 
-    C run();
+    Chromosome run();
 
-    FitnessFn<C> fitness_fn{DefaultFitnessFn<C>{}};
-    RandomInstanceFn<C> random_instance_fn{DefaultRandomInstanceFn<C>{}};
-    CrossoverFn<C> crossover_fn{DefaultCrossoverFn<C>{}};
-    MutateFn<C> mutate_fn{DefaultMutateFn<C>{}};
-    PickFn<C> pick_fn{Tournament<C>{}};
+    FitnessFn<Chromosome> fitness_fn{DefaultFitnessFn<Chromosome>{}};
+    RandomInstanceFn<Chromosome> random_instance_fn{DefaultRandomInstanceFn<Chromosome>{}};
+    CrossoverFn<Chromosome> crossover_fn{DefaultCrossoverFn<Chromosome>{}};
+    MutateFn<Chromosome> mutate_fn{DefaultMutateFn<Chromosome>{}};
+    PickFn<Chromosome> pick_fn{Tournament<Chromosome>{}};
 
 private:
     void reproduce_and_replace();
@@ -162,16 +160,17 @@ private:
 
     double threshold_;
     size_t size_;
-    Population<C> population_;
+    Population<Chromosome> population_;
     size_t max_generations_{100};
     double mutation_chance_{.01};
     double crossover_chance_{.7};
 };
 
-template<typename C>
-C GeneticAlgorithm<C>::run()
+template<typename Chromosome>
+Chromosome GeneticAlgorithm<Chromosome>::run()
 {
-    std::vector<double> fitness_cache(size_);
+    auto fitness_cache = std::vector<double>{};
+    fitness_cache.reserve(size_);
     population_.reserve(size_);
     std::generate_n(std::back_inserter(population_), size_, random_instance_fn);
     auto best = &population_[0];
@@ -199,10 +198,10 @@ C GeneticAlgorithm<C>::run()
     return *best;
 }
 
-template<typename C>
-void GeneticAlgorithm<C>::reproduce_and_replace()
+template<typename Chromosome>
+void GeneticAlgorithm<Chromosome>::reproduce_and_replace()
 {
-    Population<C> new_population;
+    Population<Chromosome> new_population;
     new_population.reserve(size_);
     while (new_population.size() < population_.size()) {
         const auto& [parent1, parent2] = get_parents();
@@ -221,8 +220,8 @@ void GeneticAlgorithm<C>::reproduce_and_replace()
     population_.swap(new_population);
 }
 
-template<typename C>
-void GeneticAlgorithm<C>::mutate()
+template<typename Chromosome>
+void GeneticAlgorithm<Chromosome>::mutate()
 {
     for (auto& c: population_) {
         if (Random::get() < mutation_chance_) {
@@ -231,8 +230,8 @@ void GeneticAlgorithm<C>::mutate()
     }
 }
 
-template<typename C>
-auto GeneticAlgorithm<C>::get_parents()
+template<typename Chromosome>
+auto GeneticAlgorithm<Chromosome>::get_parents()
 {
     return std::make_pair(
             pick_fn(population_, fitness_fn),
