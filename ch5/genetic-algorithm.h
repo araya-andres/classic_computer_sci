@@ -108,16 +108,16 @@ struct Tournament
 {
     Tournament(size_t n = 4): n_{n} {}
 
-    const Chromosome& operator()(const Population<Chromosome>& population, const FitnessFn<Chromosome>& fitness_fn)
+    const Chromosome operator()(const Population<Chromosome>& population, const FitnessFn<Chromosome>& fitness_fn)
     {
         std::random_device rd;
         std::mt19937_64 gen{rd()};
-        std::vector<size_t> indexes;
+        std::vector<size_t> indexes(population.size());
         std::iota(indexes.begin(), indexes.end(), 0);
         std::shuffle(indexes.begin(), indexes.end(), gen);
         auto best = &population[indexes[0]];
         auto best_fitness = fitness_fn(*best);
-        for (size_t i = 1; i < n_; i++) {
+        for (auto i = 1; i < n_; i++) {
             auto candidate = &population[indexes[i]];
             auto candidate_fitness = fitness_fn(*candidate);
             if (candidate_fitness > best_fitness) {
