@@ -145,7 +145,7 @@ public:
         }
     }
 
-    Chromosome run();
+    std::pair<Chromosome, double> run();
 
     FitnessFn<Chromosome> fitness_fn{DefaultFitnessFn<Chromosome>{}};
     RandomInstanceFn<Chromosome> random_instance_fn{DefaultRandomInstanceFn<Chromosome>{}};
@@ -167,7 +167,7 @@ private:
 };
 
 template<typename Chromosome>
-Chromosome GeneticAlgorithm<Chromosome>::run()
+std::pair<Chromosome, double> GeneticAlgorithm<Chromosome>::run()
 {
     auto fitness_cache = std::vector<double>{};
     fitness_cache.reserve(size_);
@@ -180,7 +180,7 @@ Chromosome GeneticAlgorithm<Chromosome>::run()
         for (size_t j = 0; j < size_; ++j) {
             fitness_cache[j] = fitness_fn(population_[j]);
             if (fitness_cache[j] > threshold_) {
-                return population_[j];
+                return {population_[j], fitness_cache[j]};
             }
             fitness_sum += fitness_cache[j];
             if (fitness_cache[j] > best_fitness) {
@@ -195,7 +195,7 @@ Chromosome GeneticAlgorithm<Chromosome>::run()
         reproduce_and_replace();
         mutate();
     }
-    return *best;
+    return {*best, best_fitness};
 }
 
 template<typename Chromosome>
@@ -214,7 +214,7 @@ void GeneticAlgorithm<Chromosome>::reproduce_and_replace()
             new_population.push_back(parent2);
         }
     }
-    if (new_population.size() > size_) {
+    while (new_population.size() > size_) {
         new_population.pop_back();
     }
     population_.swap(new_population);
