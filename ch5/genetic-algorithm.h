@@ -106,7 +106,7 @@ struct Roulette
 template<typename Chromosome>
 struct Tournament
 {
-    Tournament(size_t n = 4): n_{n} {}
+    Tournament(size_t n = 5): n_{n} {}
 
     const Chromosome operator()(const Population<Chromosome>& population, const FitnessFn<Chromosome>& fitness_fn)
     {
@@ -136,7 +136,7 @@ template<typename Chromosome>
 class GeneticAlgorithm
 {
 public:
-    GeneticAlgorithm(double threshold, size_t size=10)
+    GeneticAlgorithm(double threshold, size_t size=100)
         : threshold_(threshold)
         , size_(size)
     {
@@ -163,7 +163,7 @@ private:
     Population<Chromosome> population_;
     size_t max_generations_{100};
     double mutation_chance_{.01};
-    double crossover_chance_{.7};
+    double crossover_chance_{.5};
 };
 
 template<typename Chromosome>
@@ -233,10 +233,9 @@ void GeneticAlgorithm<Chromosome>::mutate()
 template<typename Chromosome>
 auto GeneticAlgorithm<Chromosome>::get_parents()
 {
-    return std::make_pair(
-            pick_fn(population_, fitness_fn),
-            pick_fn(population_, fitness_fn)
-            );
+    const auto parent1 = pick_fn(population_, fitness_fn);
+    const auto parent2 = pick_fn(population_, fitness_fn);
+    return std::make_pair(parent1, parent2);
 }
 
 #endif

@@ -25,7 +25,7 @@ void mutate(Point& p)
 
 int main()
 {
-    GeneticAlgorithm<Point> ga{13.0};
+    GeneticAlgorithm<Point> ga{5.0};
     ga.fitness_fn = [](const Point& p) -> double {
         return 6 * p.x - p.x * p.x + 4 * p.y - p.y * p.y;
     };
