@@ -13,7 +13,7 @@ using Index = std::map<char, size_t>;
 const Genes letters{'S','E','N','D','M','O','R','E','Y',' ',' '};
 
 int pow10(int exp) {
-    int ans = 1;
+    auto ans = 1;
     for (; exp > 0; exp--) ans *= 10;
     return ans;
 }
@@ -23,8 +23,8 @@ std::pair<Index, bool> get_index(const Genes& genes)
     Index index;
     auto begin = genes.cbegin();
     auto end = genes.cend();
-    for (size_t i = 0, n = letters.size() - 2; i < n; ++i) {
-        char c = letters[i];
+    for (auto i = 0; i < letters.size() - 2; ++i) {
+        auto c = letters[i];
         auto it = std::find(begin, end, c);
         if (it == end) {
             return {{}, false};
@@ -38,7 +38,7 @@ int word_to_value(const std::string word, const Index& index)
 {
     auto value = 0;
     for (auto i = 0; i < word.size(); i++) {
-        value += pow10(i) * word[i];
+        value += pow10(i) * index.at(word[i]);
     }
     return value;
 }
@@ -76,19 +76,22 @@ auto crossover(const Genes& parent1, const Genes& parent2)
 
 void mutate(Genes& genes)
 {
+    return;
     auto size = genes.size();
-    int i = size * Random::get();
-    int j = size * Random::get();
+    auto i = size * Random::get();
+    auto j = size * Random::get();
     if (Random::get() < .5) {
         genes[i] = letters[j];
     } else {
-        std::swap(genes[i], genes[j]);
+        auto temp = genes[i];
+        genes[i] = genes[j];
+        genes[j] = temp;
     }
 }
 
 int main()
 {
-    GeneticAlgorithm<Genes> ga{1.0};
+    auto ga = GeneticAlgorithm<Genes>{1.0};
     ga.fitness_fn = fitness;
     ga.random_instance_fn = random_instance;
     ga.crossover_fn = crossover;
