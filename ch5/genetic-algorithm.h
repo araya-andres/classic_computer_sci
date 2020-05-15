@@ -29,7 +29,7 @@ template<typename Chromosome>
 using MutateFn = std::function<void(Chromosome&)>;
 
 template<typename Chromosome>
-using PickFn = std::function<const Chromosome&(const Population<Chromosome>&, const FitnessFn<Chromosome>&)>;
+using PickFn = std::function<Chromosome(const Population<Chromosome>&, const FitnessFn<Chromosome>&)>;
 
 // Default callbacks throw an exception if called.
 template<typename Chromosome>
@@ -85,7 +85,7 @@ struct Random
 template<typename Chromosome>
 struct Roulette
 {
-    const Chromosome& operator()(const Population<Chromosome>& population, const FitnessFn<Chromosome>& fitness_fn)
+    Chromosome operator()(const Population<Chromosome>& population, const FitnessFn<Chromosome>& fitness_fn)
     {
         using namespace ranges::v3;
 
@@ -108,7 +108,7 @@ struct Tournament
 {
     Tournament(size_t n = 5): n_{n} {}
 
-    const Chromosome operator()(const Population<Chromosome>& population, const FitnessFn<Chromosome>& fitness_fn)
+    Chromosome operator()(const Population<Chromosome>& population, const FitnessFn<Chromosome>& fitness_fn)
     {
         std::random_device rd;
         std::mt19937_64 gen{rd()};
@@ -233,8 +233,8 @@ void GeneticAlgorithm<Chromosome>::mutate()
 template<typename Chromosome>
 auto GeneticAlgorithm<Chromosome>::get_parents()
 {
-    const auto parent1 = pick_fn(population_, fitness_fn);
-    const auto parent2 = pick_fn(population_, fitness_fn);
+    auto parent1 = pick_fn(population_, fitness_fn);
+    auto parent2 = pick_fn(population_, fitness_fn);
     return std::make_pair(parent1, parent2);
 }
 

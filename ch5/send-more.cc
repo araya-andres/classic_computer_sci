@@ -1,16 +1,15 @@
 #include <algorithm>
+#include <cassert>
 #include <map>
 #include <utility>
 #include <vector>
 
-#include "prettyprint.hpp"
-
 #include "genetic-algorithm.h"
 
-using Genes = std::vector<char>;
+using Chromosome = std::vector<char>;
 using Index = std::map<char, size_t>;
 
-const Genes letters{'S','E','N','D','M','O','R','E','Y',' ',' '};
+const Chromosome letters{'S','E','N','D','M','O','R','E','Y',' ',' '};
 
 int pow10(int exp) {
     auto ans = 1;
@@ -18,11 +17,11 @@ int pow10(int exp) {
     return ans;
 }
 
-std::pair<Index, bool> get_index(const Genes& genes)
+std::pair<Index, bool> get_index(const Chromosome& c)
 {
     Index index;
-    auto begin = genes.cbegin();
-    auto end = genes.cend();
+    auto begin = c.cbegin();
+    auto end = c.cend();
     for (auto i = 0; i < letters.size() - 2; ++i) {
         auto c = letters[i];
         auto it = std::find(begin, end, c);
@@ -43,9 +42,9 @@ int word_to_value(const std::string word, const Index& index)
     return value;
 }
 
-double fitness(const Genes& genes)
+double fitness(const Chromosome& c)
 {
-    if (auto [index, ok] = get_index(genes); ok) {
+    if (auto [index, ok] = get_index(c); ok) {
         auto send = word_to_value("SEND", index);
         auto more = word_to_value("MORE", index);
         auto money = word_to_value("MONEY", index);
@@ -55,16 +54,16 @@ double fitness(const Genes& genes)
     return .0;
 }
 
-Genes random_instance()
+Chromosome random_instance()
 {
-    Genes genes{letters};
+    Chromosome c{letters};
     std::random_device rd;
     std::mt19937_64 gen{rd()};
-    std::shuffle(genes.begin(), genes.end(), gen);
-    return genes;
+    std::shuffle(c.begin(), c.end(), gen);
+    return c;
 }
 
-auto crossover(const Genes& parent1, const Genes& parent2)
+auto crossover(const Chromosome& parent1, const Chromosome& parent2)
 {
     auto child1 = parent1;
     auto child2 = parent2;
@@ -74,28 +73,27 @@ auto crossover(const Genes& parent1, const Genes& parent2)
     return std::make_pair(child1, child2);
 }
 
-void mutate(Genes& genes)
+void mutate(Chromosome& c)
 {
-    return;
-    auto size = genes.size();
+    auto size = c.size();
+    assert(size > 0);
     auto i = size * Random::get();
     auto j = size * Random::get();
     if (Random::get() < .5) {
-        genes[i] = letters[j];
+        c[i] = letters[j];
     } else {
-        auto temp = genes[i];
-        genes[i] = genes[j];
-        genes[j] = temp;
+        auto temp = c[i];
+        c[i] = c[j];
+        c[j] = temp;
     }
 }
 
 int main()
 {
-    auto ga = GeneticAlgorithm<Genes>{1.0};
+    auto ga = GeneticAlgorithm<Chromosome>{1.0};
     ga.fitness_fn = fitness;
     ga.random_instance_fn = random_instance;
     ga.crossover_fn = crossover;
     ga.mutate_fn = mutate;
     auto best = ga.run();
-    std::cout << best << '\n';
 }
