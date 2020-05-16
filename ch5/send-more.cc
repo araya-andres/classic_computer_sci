@@ -4,6 +4,8 @@
 #include <utility>
 #include <vector>
 
+#include "prettyprint.hpp"
+
 #include "genetic-algorithm.h"
 
 using Chromosome = std::vector<char>;
@@ -79,13 +81,7 @@ void mutate(Chromosome& c)
     assert(size > 0);
     auto i = size * Random::get();
     auto j = size * Random::get();
-    if (Random::get() < .5) {
-        c[i] = letters[j];
-    } else {
-        auto temp = c[i];
-        c[i] = c[j];
-        c[j] = temp;
-    }
+    std::swap(c[i], c[j]);
 }
 
 int main()
@@ -96,4 +92,5 @@ int main()
     ga.crossover_fn = crossover;
     ga.mutate_fn = mutate;
     auto best = ga.run();
+    std::cout << best << '\n';
 }
