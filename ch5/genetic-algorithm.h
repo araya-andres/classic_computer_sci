@@ -171,8 +171,8 @@ template<typename Chromosome>
 std::pair<Chromosome, double> GeneticAlgorithm<Chromosome>::run()
 {
     generate_population();
-    auto best = &population_[0];
-    auto best_fitness = fitness_fn(*best);
+    auto best = population_[0];
+    auto best_fitness = fitness_fn(best);
     for (size_t generation = 0; generation < max_generations_; ++generation) {
         auto fitness_sum = .0;
         for (size_t j = 0; j < size_; ++j) {
@@ -183,7 +183,7 @@ std::pair<Chromosome, double> GeneticAlgorithm<Chromosome>::run()
             fitness_sum += fitness;
             if (fitness > best_fitness) {
                 best_fitness = fitness;
-                best = &population_[j];
+                best = population_[j];
             }
         }
         std::cout
@@ -193,7 +193,7 @@ std::pair<Chromosome, double> GeneticAlgorithm<Chromosome>::run()
         reproduce_and_replace();
         mutate();
     }
-    return {*best, best_fitness};
+    return {best, best_fitness};
 }
 
 template<typename Chromosome>
