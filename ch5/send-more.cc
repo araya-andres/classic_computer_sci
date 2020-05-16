@@ -46,8 +46,9 @@ std::pair<Index, bool> get_index(const Chromosome& c)
     return {index, true};
 }
 
-int word_to_value(const std::string word, const Index& index)
+int word_to_value(std::string word, const Index& index)
 {
+    std::reverse(std::begin(word), std::end(word));
     auto value = 0;
     for (auto i = 0; i < word.size(); i++) {
         value += pow10(i) * index.at(word[i]);
@@ -102,5 +103,15 @@ int main()
     ga.random_instance_fn = random_instance;
     ga.crossover_fn = crossover;
     ga.mutate_fn = mutate;
-    std::cout << ga.run() << '\n';
+    auto [ans, _] = ga.run();
+
+    auto begin = std::cbegin(ans);
+    auto end = std::cend(ans);
+    for (auto c : letters) {
+        if (c == ' ') break;
+        auto it = std::find(begin, end, c);
+        if (it != end) {
+            std::cout << c << " -> " << std::distance(begin, it) << '\n';
+        }
+    }
 }
