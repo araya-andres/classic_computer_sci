@@ -157,6 +157,7 @@ private:
     void reproduce_and_replace();
     void mutate();
     auto get_parents();
+    void generate_population();
 
     double threshold_;
     size_t size_;
@@ -169,22 +170,19 @@ private:
 template<typename Chromosome>
 std::pair<Chromosome, double> GeneticAlgorithm<Chromosome>::run()
 {
-    auto fitness_cache = std::vector<double>{};
-    fitness_cache.reserve(size_);
-    population_.reserve(size_);
-    std::generate_n(std::back_inserter(population_), size_, random_instance_fn);
+    generate_population();
     auto best = &population_[0];
     auto best_fitness = fitness_fn(*best);
     for (size_t generation = 0; generation < max_generations_; ++generation) {
         auto fitness_sum = .0;
         for (size_t j = 0; j < size_; ++j) {
-            fitness_cache[j] = fitness_fn(population_[j]);
-            if (fitness_cache[j] > threshold_) {
-                return {population_[j], fitness_cache[j]};
+            auto fitness = fitness_fn(population_[j]);
+            if (fitness > threshold_) {
+                return {population_[j], fitness};
             }
-            fitness_sum += fitness_cache[j];
-            if (fitness_cache[j] > best_fitness) {
-                best_fitness = fitness_cache[j];
+            fitness_sum += fitness;
+            if (fitness > best_fitness) {
+                best_fitness = fitness;
                 best = &population_[j];
             }
         }
@@ -236,6 +234,13 @@ auto GeneticAlgorithm<Chromosome>::get_parents()
     auto parent1 = pick_fn(population_, fitness_fn);
     auto parent2 = pick_fn(population_, fitness_fn);
     return std::make_pair(parent1, parent2);
+}
+
+template<typename Chromosome>
+void GeneticAlgorithm<Chromosome>::generate_population()
+{
+    population_.reserve(size_);
+    std::generate_n(std::back_inserter(population_), size_, random_instance_fn);
 }
 
 #endif
