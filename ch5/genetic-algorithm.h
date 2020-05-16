@@ -173,9 +173,9 @@ std::pair<Chromosome, double> GeneticAlgorithm<Chromosome>::run()
     generate_population();
     auto best = population_[0];
     auto best_fitness = fitness_fn(best);
-    for (size_t generation = 0; generation < max_generations_; ++generation) {
+    for (auto generation = 0; generation < max_generations_; ++generation) {
         auto fitness_sum = .0;
-        for (size_t j = 0; j < size_; ++j) {
+        for (auto j = 0; j < size_; ++j) {
             auto fitness = fitness_fn(population_[j]);
             if (fitness > threshold_) {
                 return {population_[j], fitness};

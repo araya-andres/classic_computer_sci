@@ -11,17 +11,28 @@
 using Chromosome = std::vector<char>;
 using Index = std::map<char, size_t>;
 
-const Chromosome letters{'S','E','N','D','M','O','R','E','Y',' ',' '};
+const Chromosome letters{'S','E','N','D','M','O','R','Y',' ',' '};
 
 int pow10(int exp) {
-    auto ans = 1;
-    for (; exp > 0; exp--) ans *= 10;
-    return ans;
+    assert(exp < 10);
+    int p[] = {
+        1,
+        10,
+        100,
+        1000,
+        10000,
+        100000,
+        1000000,
+        10000000,
+        100000000,
+        1000000000,
+    };
+    return p[exp];
 }
 
 std::pair<Index, bool> get_index(const Chromosome& c)
 {
-    Index index;
+    auto index = Index{};
     auto begin = c.cbegin();
     auto end = c.cend();
     for (auto i = 0; i < letters.size() - 2; ++i) {
@@ -91,6 +102,5 @@ int main()
     ga.random_instance_fn = random_instance;
     ga.crossover_fn = crossover;
     ga.mutate_fn = mutate;
-    auto best = ga.run();
-    std::cout << best << '\n';
+    std::cout << ga.run() << '\n';
 }

@@ -15,15 +15,6 @@ std::ostream& operator<<(std::ostream& os, const Point& p)
     return os << '{' << p.x << ',' << p.y << '}';
 }
 
-void mutate(Point& p)
-{
-    if (Random::get() < .5) {
-        p.x += (Random::get() < .5 ? 1 : -1);
-    } else {
-        p.y += (Random::get() < .5 ? 1 : -1);
-    }
-}
-
 int main()
 {
     GeneticAlgorithm<Point> ga{13.0};
@@ -33,9 +24,15 @@ int main()
     ga.random_instance_fn = []() -> Point {
         return {MAX_VAL * Random::get() , MAX_VAL * Random::get()};
     };
-    ga.crossover_fn = [](const Point& p, const Point& q) {
-        return std::pair<Point, Point>{{p.x, q.y}, {q.x, p.y}};
+    ga.crossover_fn = [](const Point& p, const Point& q) -> std::pair<Point, Point> {
+        return {{p.x, q.y}, {q.x, p.y}};
     };
-    ga.mutate_fn = mutate;
+    ga.mutate_fn = [](Point& p) {
+        if (Random::get() < .5) {
+            p.x += (Random::get() < .5 ? 1 : -1);
+        } else {
+            p.y += (Random::get() < .5 ? 1 : -1);
+        }
+    };
     std::cout << ga.run() << '\n';
 }
