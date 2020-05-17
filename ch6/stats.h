@@ -44,7 +44,7 @@ C zscored(const C& c) {
     auto ans = c;
     std::transform(
         ans.begin(), ans.end(), ans.begin(),
-        [&](auto x){ return (x - m) / s; }
+        [&](auto x){ return s == 0 ? 0 : (x - m) / s; }
     );
     return ans;
 }
