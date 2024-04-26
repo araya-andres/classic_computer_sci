@@ -1,4 +1,8 @@
 add_executable(fib2 fib2.cc)
 add_executable(fib3 fib3.cc)
+add_executable(fib4 fib4.cc)
+add_executable(fib5 fib5.cc)
 add_executable(gene gene.cc)
+add_executable(unbreakable-encryption unbreakable-encryption.cc)
 add_executable(pi pi.cc)
+add_executable(towers-of-hanoi towers-of-hanoi.cc)
